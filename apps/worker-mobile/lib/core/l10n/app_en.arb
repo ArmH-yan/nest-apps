@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "appTitle": "NEST Worker",
+  "@appTitle": { "description": "Application name shown in the app bar and task switcher." },
+  "foundationHeadline": "Setup complete",
+  "@foundationHeadline": { "description": "Temporary start screen headline (foundation build)." },
+  "foundationBody": "Tasks, work timer and photos will appear here in the next releases.",
+  "@foundationBody": { "description": "Temporary start screen body text (foundation build)." }
+}

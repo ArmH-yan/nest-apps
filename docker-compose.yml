@@ -1,0 +1,25 @@
+# Local development infrastructure. v1 foundation: PostgreSQL only.
+# Values come from the root `.env` (copy `.env.example`).
+services:
+  db:
+    image: postgres:17
+    container_name: nest-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      TZ: UTC
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - nest-pgdata:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  nest-pgdata:
