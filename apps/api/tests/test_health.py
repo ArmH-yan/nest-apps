@@ -1,11 +1,14 @@
 from collections.abc import AsyncIterator
 
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from fastapi import FastAPI
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.db.session import get_session, get_sessionmaker
+from tests.conftest import API_DIR
 
 
 async def test_health_ok(client: AsyncClient) -> None:
@@ -43,7 +46,8 @@ async def test_migrations_applied() -> None:
             text("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'btree_gist')")
         )
 
-    assert version == "0001"
+    head = ScriptDirectory.from_config(Config(str(API_DIR / "alembic.ini"))).get_current_head()
+    assert version == head
     assert has_btree_gist is True
 
 

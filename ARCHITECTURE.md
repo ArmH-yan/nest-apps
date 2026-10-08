@@ -256,6 +256,7 @@ Uses the NEST Worker app only, and sees **only their own** assignments:
 - verify location, track work and break time
 - record materials (crew lead)
 - upload photos, add comments, submit completion
+- see their own approved work and pay for the current month (§8 "Worker pay")
 
 ### CLIENT
 
@@ -287,6 +288,16 @@ Access token (short-lived, ~15 min) + refresh token (rotating, stored hashed)
 - **Rate-limit** login attempts.
 
 Passwords are never stored as plaintext.
+
+**As built (Phase 1, 2026-10-08)** — `apps/api/app/modules/{auth,users,audit}`:
+
+- `POST /auth/login` takes `{phone | email, password, device_id?}` and returns `{access_token, refresh_token, token_type, expires_in, user}`. `user` has the same shape as `GET /me`, which includes `worker: {id, employee_code}` for workers. Phones are normalized (`+374 91 00-00-07` → `+37491000007`) and emails are lower-cased.
+- The access token is an HS256 JWT signed with `JWT_SECRET` (required setting). It carries `sub`, `role` and `fid`, the refresh-token family. Refresh tokens are random strings, stored as SHA-256 hashes. Each refresh rotates the token, and reusing a rotated token revokes the family (`REFRESH_TOKEN_REUSED`).
+- While `must_change_password` is set, only `/me`, `/auth/change-password` and `/auth/logout` work; everything else returns `403 PASSWORD_CHANGE_REQUIRED`. Changing the password signs out all other sessions. Logout revokes all of the user's refresh tokens.
+- Login rate limit: after 5 failed attempts for the same phone/email within 15 minutes, the API returns `429 TOO_MANY_LOGIN_ATTEMPTS`. Failures are counted from `audit_logs` (`auth.login_failed`), so no extra store is needed. Wrong passwords and unknown phones return the same `401 INVALID_CREDENTIALS`; a wrong current password on change returns `400 INVALID_CREDENTIALS`.
+- Phase 1 uses Bearer tokens only. The manager app's HttpOnly-cookie + CSRF variant is added with the manager login (Phase 3), as is removing FCM device tokens on logout.
+- Accounts are created with `python -m app.cli create-user …` until the manager app's worker management exists. The password is prompted for, never passed as an argument.
+- Router dependencies: `CurrentAuth`, `PasswordChangeAuth`, `require_roles(...)` (`app/modules/auth/dependencies.py`).
 
 ---
 
@@ -602,6 +613,8 @@ worker_id
 role             LEAD | MEMBER
 period           tstzrange  (copied from the visit; kept in sync by the service)
 status           ASSIGNED | IN_PROGRESS | SUBMITTED | CANCELLED
+pay_amount       numeric(12,2), nullable  (fixed pay for this task, entered by the manager)
+currency         default 'AMD'
 reviewed_by      nullable (timesheet approval)
 reviewed_at
 review_flags     text[]  (e.g. OUTSIDE_GEOFENCE, MOCK_LOCATION, CLOCK_SKEW, TOTALS_MISMATCH)
@@ -621,6 +634,8 @@ ALTER TABLE visit_assignments
 ```
 
 When this constraint is violated, the API returns `409 WORKER_ALREADY_BOOKED`.
+
+**Worker pay (decided 2026-10-08):** each assignment pays a fixed `pay_amount` that the manager enters when assigning the crew (it can be edited until the timesheet is approved; changes are audited). There are no hourly or daily rates. A task counts as **earned** once its timesheet is approved (`reviewed_at` is set, status `SUBMITTED`). The worker app shows the current Yerevan month's approved count and total (`GET /worker/earnings`, §18). Workers see only their own pay; job and quote prices stay hidden (§6).
 
 ### time_entries  (work and break sessions)
 
@@ -947,7 +962,7 @@ For each worker and day, the manager sees:
 - photos and the comment
 - flags: `OUTSIDE_GEOFENCE`, `MOCK_LOCATION`, `LOW_ACCURACY`, `CLOCK_SKEW`, `TOTALS_MISMATCH`, `LATE_SYNC`
 
-Actions: **approve**, **adjust** (with a reason; the change is audited), or **override the location** (with a reason). Approved time can be exported to CSV for payroll.
+Actions: **approve**, **adjust** (with a reason; the change is audited), or **override the location** (with a reason). Approving a task makes its `pay_amount` count as earned in the worker app. Approved time and pay can be exported to CSV for payroll.
 
 ---
 
@@ -956,7 +971,7 @@ Actions: **approve**, **adjust** (with a reason; the change is audited), or **ov
 The manager must be able to:
 
 - create one or more visits for a job (date, start, end)
-- assign a crew (one LEAD + members) to each visit; each member gets their own task in the app
+- assign a crew (one LEAD + members) to each visit; each member gets their own task in the app, with its own fixed `pay_amount` (§8)
 - copy a crew/time across consecutive days (multi-day installations)
 - reschedule or cancel visits (the affected workers get a push)
 - see worker availability (existing assignments + time off)
@@ -1081,6 +1096,7 @@ POST /api/v1/worker/files/{uuid}/confirm
 
 PUT  /api/v1/worker/tasks/{assignment_id}/completion/{uuid}
 GET  /api/v1/worker/history?cursor=
+GET  /api/v1/worker/earnings?month=YYYY-MM       # → { month, approved_tasks, approved_amount, currency }
 
 GET  /api/v1/worker/notifications?cursor=
 POST /api/v1/worker/notifications/{id}/read
@@ -1092,6 +1108,7 @@ Rules:
 - A worker can never reach another worker's assignments; the API returns `404`.
 - Every PUT can be replayed. If it arrives again with the same body, the server returns `200` with the stored record. If it arrives with a different body for an already-finalized record, the server returns `409`.
 - Requests include `X-Device-Time`. The server stores `client_clock_offset_s` and flags large differences.
+- `earnings` counts the worker's own approved assignments (`reviewed_at` set) whose visit date falls in the given Yerevan month, and sums their `pay_amount` (assignments without one count as 0). `approved_amount` is a decimal string such as `"80000.00"`, never a float.
 - The server does **not reject** late or offline data because of its timestamps. It stores the data and flags it for manager review. Hard rejections are limited to authorization, impossible states (e.g. completing a cancelled task) and overlapping time entries.
 
 ---
@@ -1767,6 +1784,8 @@ As a solo developer, alternate between the app and the backend so that each piec
 Flutter: full mock workflow per docs/WORKER_APP_SPEC.md (login → … → history), tests
 Backend: Docker Compose, PostgreSQL, FastAPI skeleton, Alembic, users/auth, audit, error format, CI
 ```
+
+Status (2026-10-08): built. Users/workers/refresh tokens/audit logs (migration `0002`), auth endpoints (§7 "As built"), and GitHub Actions CI for all three apps (`.github/workflows/ci.yml`). Added to the worker app at the same time: the monthly earnings header (mock data until `/worker/earnings` exists in Phase 2) and the round flip timer.
 
 ## Phase 2 — Scheduling core + worker API
 

@@ -14,7 +14,9 @@ from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestIdMiddleware
 from app.db.session import get_engine
+from app.modules.auth.router import router as auth_router
 from app.modules.health.router import router as health_router
+from app.modules.users.router import router as users_router
 
 API_V1_PREFIX = "/api/v1"
 
@@ -54,6 +56,8 @@ def create_app() -> FastAPI:
 
     # Versioned business routers are included here as modules are built.
     api_v1 = APIRouter(prefix=API_V1_PREFIX)
+    api_v1.include_router(auth_router)
+    api_v1.include_router(users_router)
     app.include_router(api_v1)
 
     return app

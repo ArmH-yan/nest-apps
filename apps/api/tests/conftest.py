@@ -9,6 +9,8 @@ import pytest
 from alembic.config import Config
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from alembic import command
 from app.core.config import get_settings
@@ -38,6 +40,24 @@ def migrated_database() -> Iterator[None]:
     cfg = Config(str(API_DIR / "alembic.ini"))
     command.upgrade(cfg, "head")
     yield
+
+
+# Business tables emptied after every test (add new ones here).
+_TABLES = ("audit_logs", "refresh_tokens", "workers", "users")
+
+
+@pytest.fixture(autouse=True)
+async def clean_tables() -> AsyncIterator[None]:
+    yield
+    async with get_sessionmaker()() as session:
+        await session.execute(text(f"TRUNCATE {', '.join(_TABLES)} RESTART IDENTITY CASCADE"))
+        await session.commit()
+
+
+@pytest.fixture
+async def session() -> AsyncIterator[AsyncSession]:
+    async with get_sessionmaker()() as s:
+        yield s
 
 
 @pytest.fixture

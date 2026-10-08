@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import PostgresDsn, field_validator
+from pydantic import Field, PostgresDsn, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # apps/api/app/core/config.py -> repo root is four levels up
@@ -25,6 +25,15 @@ class Settings(BaseSettings):
     test_database_url: PostgresDsn | None = None
     cors_origins: Annotated[list[str], NoDecode] = []
     log_level: str = "INFO"
+
+    # Auth (ARCHITECTURE §7). Required: signs access tokens.
+    jwt_secret: SecretStr = Field(min_length=32)
+    access_token_ttl_minutes: int = 15
+    # Sliding: every refresh issues a new token with a fresh lifetime.
+    refresh_token_ttl_days: int = 60
+    # Failed logins allowed per phone/email within the window before 429.
+    login_max_failures: int = 5
+    login_failure_window_minutes: int = 15
 
     @field_validator("cors_origins", mode="before")
     @classmethod

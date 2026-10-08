@@ -1,0 +1,84 @@
+# CI for all three apps (ARCHITECTURE §36). Runs the same checks as CLAUDE.md "Commands".
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (FastAPI)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: nest
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: nest_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U nest -d nest_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: test
+      # required by settings but never connected to: the tests use TEST_DATABASE_URL
+      DATABASE_URL: postgresql+asyncpg://nest:ci-only@localhost:5432/nest
+      TEST_DATABASE_URL: postgresql+asyncpg://nest:ci-only@localhost:5432/nest_test
+      JWT_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+      - run: python -m pip install -e ".[dev]"
+      - run: ruff format --check .
+      - run: ruff check .
+      - run: mypy app tests alembic/env.py
+      - run: pytest
+
+  worker-mobile:
+    name: Worker app (Flutter)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/worker-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.3
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
+
+  manager-web:
+    name: Manager web (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/manager-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/manager-web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build

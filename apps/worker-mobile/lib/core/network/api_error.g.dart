@@ -12,7 +12,7 @@ _ApiErrorEnvelope _$ApiErrorEnvelopeFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$ApiErrorEnvelopeToJson(_ApiErrorEnvelope instance) =>
-    <String, dynamic>{'error': instance.error};
+    <String, dynamic>{'error': instance.error.toJson()};
 
 _ApiErrorBody _$ApiErrorBodyFromJson(Map<String, dynamic> json) =>
     _ApiErrorBody(

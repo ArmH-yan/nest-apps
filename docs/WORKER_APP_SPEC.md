@@ -67,10 +67,10 @@ For this build phase, implement the full app against **mock repositories**. Stru
 | Secure session storage (tokens) | `flutter_secure_storage` |
 | Small preferences (language, last tab) | `shared_preferences` |
 | GPS | `geolocator` |
-| Photos | `image_picker` (camera + gallery), `flutter_image_compress` |
+| Photos | `image_picker` (camera + gallery; it also resizes/compresses, so no separate compression package) |
 | Connectivity | `connectivity_plus` |
 | IDs | `uuid` |
-| Map preview | `google_maps_flutter`, or a static map image + "Open in Maps" via `url_launcher` |
+| Map preview | v1: schematic site/radius preview + "Navigate" (`geo:` intent → Google Maps / Yandex Navigator) via `url_launcher`. `google_maps_flutter` needs an API key and is deferred |
 | Localization | `flutter_localizations` + ARB files (`intl`) |
 | Push (later phase; stub interface now) | `firebase_core` + `firebase_messaging` only — FCM is the push transport (APNs on iOS). No other Firebase packages (no Auth, Firestore, Realtime Database, Storage, Crashlytics, Analytics) |
 
@@ -206,6 +206,7 @@ TaskCompletion    id (uuid), taskId, workerId, completedAt, completionLocationCh
 SyncItem          id, entityType, entityId, operation, payloadJson, attempts,
                   lastError?, state (pending | inFlight | failed | done), createdAt
 AppNotification   id, type, title, body, taskId?, createdAt, readAt?
+EarningsSummary   year, month, approvedTasks, approvedAmount (decimal string), currency
 ```
 
 ### Task display status
@@ -279,6 +280,22 @@ Implementations:
 
 **The UI must not know whether data comes from mocks or the API.** This is selected by a single provider override based on `USE_MOCKS`.
 
+**As built (Phase 1, 2026-10-07).** The Mock/Api switch sits one level lower than the list above. This avoids duplicating the local-storage and outbox logic in every Mock*/Api* pair:
+
+- **`NestApi`** (`lib/core/api/nest_api.dart`) is the single remote interface. `MockNestApi` is the deterministic in-memory backend with failure switches. An HTTP implementation (on `ApiClient` + DTOs) is added once the backend `/api/v1/worker/*` endpoints exist. `nestApiProvider` is the only place that reads `USE_MOCKS`.
+- The **repositories** are concrete classes over the drift DB + `NestApi`, and are the same in mock and API mode:
+  - `AuthRepository`
+  - `TaskRepository`: task cache, config, catalog, expected materials
+  - `WorkSessionRepository`: time entries + location checks
+  - `CompletionRepository`: photos, materials, completion (covers PhotoRepository, MaterialRepository and TaskCompletionRepository)
+  - `NotificationRepository`
+  - `EarningsRepository`: this month's approved earnings, with a SharedPreferences cache
+  - `SettingsRepository`
+
+  History is derived from local completions, so there is no HistoryRepository.
+- The **services** are `WorkActions` (GPS verification + work/break actions, i.e. the WorkTimerService role), `CompletionService` (photos + submit) and `SyncService` (outbox and photo upload, i.e. the PhotoUploadService role). `LocationService` has `GeolocatorLocationService` and `MockLocationService` implementations, and `PhotoCaptureService` is implemented with image_picker.
+- **Dismantling:** the "retrieved" rows are pre-filled from the expected list. At submit, the difference (expected − retrieved) is saved as `lost` rows.
+
 ### Backend API the Api* repositories will call (ARCHITECTURE.md §18)
 
 ```text
@@ -295,6 +312,7 @@ POST /api/v1/worker/files/{uuid}/presign      → { uploadUrl, headers }
 POST /api/v1/worker/files/{uuid}/confirm
 PUT  /api/v1/worker/tasks/{taskId}/completion/{uuid}
 GET  /api/v1/worker/history?cursor=
+GET  /api/v1/worker/earnings?month=YYYY-MM    → { month, approved_tasks, approved_amount, currency }
 GET  /api/v1/worker/notifications?cursor=
 POST /api/v1/worker/notifications/{id}/read
 PUT  /api/v1/worker/devices/{fcmToken}
@@ -312,6 +330,7 @@ Header:
 - "My Tasks"
 - Worker name
 - Current date
+- Top right, before the notification bell: **works done** (✓ count) and, right of it, **money earned** (yellow pill, `80 000 ֏`). Both are for the current Yerevan month and count **only manager-approved tasks** (ARCHITECTURE §8 "Worker pay"). Tapping either opens a sheet that says only approved tasks are counted. The values come from `GET /worker/earnings` via `EarningsRepository`. The last answer is cached in SharedPreferences, so the header still shows numbers offline; the cache is ignored once the month changes and removed on logout. Pull-to-refresh reloads it. Amounts are decimal strings and are never parsed into a double (`formatMoney`).
 - Notification bell with unread count
 
 Sections: **Today** (emphasized) and **Upcoming**. The list supports pull-to-refresh and shows cached data when offline, with a "Last updated 08:12" note.
@@ -443,11 +462,13 @@ Install Safety Net – Building A
 
 ● WORKING                (or  ● ON BREAK  — different color, label and icon)
 
-WORK TIME
-06:42:18                 (very large)
-
-BREAK TIME
-00:32:14
+      ╭───────────────╮      round FlipTimer
+     │   WORK TIME     │     front: work timer (green), back: break timer (blue)
+     │   06:42:18      │     large value + the other total small underneath
+     │ BREAK 00:32:14  │     ring sweeps once a minute (derived from the value)
+     │ Tap to take a   │
+     │     break       │
+      ╰───────────────╯
 
 STARTED      09:02
 LOCATION     ✓ Verified (32 m)
@@ -460,6 +481,7 @@ SYNC         ✓ Synced  /  ⟳ 3 items waiting  /  ⚠ Sync failed — Retry
 - WORKING, ON BREAK and COMPLETED must be impossible to confuse: use a different color, label and icon for each.
 - If there is no active task, show an EmptyState: "No active task. Start a task from My Tasks."
 - **Finish Task** asks for confirmation, then opens `/work/complete`.
+- **FlipTimer** (`features/work/presentation/flip_timer.dart`): tapping the dial does the same as the primary button. On the work face it starts a break; on the break face it resumes work. The dial turns over (600 ms 3D rotation around the vertical axis) as soon as it is tapped. If the action fails, it turns back and the error is shown. Otherwise it follows the stored state, so the two buttons below still work and stay in sync. The values shown are always computed from stored timestamps (see WORK TIMER).
 
 ---
 
@@ -481,7 +503,7 @@ Shows: task, work time, break time, total duration, location verification, compl
 ### 3. Photos of Completed Work
 
 - **Take Photo** / **Choose From Gallery**, multiple photos, shown in a grid.
-- Photos are compressed to about 1600 px JPEG and stored in app documents. The original isn't kept.
+- Photos are resized to at most 1600 px (JPEG quality 80) by `image_picker` and copied into app documents. The original isn't kept.
 - Each tile shows its upload state: pending, a progress ring, uploaded, or failed with retry. A photo can be removed until it is submitted.
 - At least `config.minCompletionPhotos` photos (default 1) are required. Until then the Submit button stays disabled and a hint is shown.
 - `PhotoRepository` + `PhotoUploadService` handle the upload: presign → PUT → confirm. Mocks simulate progress and failures.
@@ -702,6 +724,7 @@ Mock data must be deterministic: no random values on rebuild. All dates are rela
   4. **Safety Net Inspection – Building D**. In 3 days, INSPECTION, MEMBER. Ajapnyak, Yerevan.
   5. **Dismantle Safety Net – Building E**. Today 14:00–18:00, DISMANTLING, LEAD. Expected materials: 300 m² net, 40 anchors. Use it to test dismantling and to test "another task already active".
 - Catalog: Safety net 10×5 m (pcs), Safety net (m²), Dust net (m²), Anchor M12 (pcs), Steel cable 8 mm (m).
+- Approved pay (`MockData.approvedPay`): tasks approved 1, 3 and 6 days ago (25 000 + 30 000 + 25 000 ֏), plus 10, 20 and 40 days ago (35 000, 20 000, 25 000 ֏). Whether the older ones count depends on the date: on 7 October the header shows **3** and **80 000 ֏**.
 - Mock location: the `MockLocationService` can be switched between "at site (32 m)", "outside (870 m)", "low accuracy", "permission denied" and "services disabled". Add a dev-only menu in Profile (`dev` flavor only) to switch the mock GPS scenario and to simulate offline/failure modes.
 
 ---
@@ -730,7 +753,8 @@ Add unit tests for the business logic. At minimum:
   - `409` → failed
   - a replay produces no duplicates
   - logout keeps the items
-- **Widget tests**: TaskCard states, Work screen in WORKING vs ON BREAK, Verify Location states.
+- **Earnings**: only the current Yerevan month is counted; the cache is served offline and ignored in a new month; `formatMoney` output.
+- **Widget tests**: TaskCard states, Work screen in WORKING vs ON BREAK (tapping the FlipTimer turns it over), Verify Location states, header counters.
 - **Integration test**: the full mock workflow.
 
 ---

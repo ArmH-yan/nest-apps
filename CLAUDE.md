@@ -44,7 +44,7 @@ infrastructure/       Caddy, prod compose, backups
 docs/
 ```
 
-The foundation exists for all three apps; there are no business features yet. The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
+Phase 1 (§41) is built: the worker app's full mock workflow, and backend auth/users/audit + CI (`.github/workflows/ci.yml`). Scheduling and the `/worker/*` API are Phase 2. The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
 
 ## Related repo: public website
 
@@ -74,7 +74,8 @@ The foundation exists for all three apps; there are no business features yet. Th
 
 - Feature-based layout: `data / domain / presentation`. Use Riverpod, GoRouter, Dio, freezed/json_serializable, drift (local DB + outbox) and flutter_secure_storage (tokens).
 - UI never calls HTTP, GPS or storage directly. Go through repository/service interfaces.
-  - `Mock*` and `Api*` implementations are selected only via a provider override based on `USE_MOCKS`.
+  - The Mock/Api switch is the `NestApi` interface (`MockNestApi` now, HTTP later), chosen only in `nestApiProvider` from `USE_MOCKS`. Repositories are shared by both modes (see WORKER_APP_SPEC "As built").
+  - Widget tests: use `test/support/app_harness.dart`. Its `settle()` interleaves real and fake time because drift completes queries on real async time; `pumpAndSettle` never settles because of the 1 s ticker.
 - **Timers come from stored timestamps**, using an injectable `Clock`. Never use a counter as the source of truth.
 - Every write = local change + outbox item in **one drift transaction**.
 - Strings go in ARB files (hy/ru/en). Colors and text styles come only from `core/theme`.
@@ -90,7 +91,7 @@ The foundation exists for all three apps; there are no business features yet. Th
 One-time setup:
 
 ```bash
-cp .env.example .env                    # repo root; used by docker compose AND apps/api
+cp .env.example .env                    # repo root; used by docker compose AND apps/api (set JWT_SECRET)
 cd apps/api && python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"
 cd apps/manager-web && npm install && cp .env.example .env.local
 ```
@@ -105,6 +106,7 @@ docker compose up -d db                 # PostgreSQL 17 on localhost:5433 (+ nes
 .venv/Scripts/alembic revision --autogenerate -m "..."      # new migration (review it!)
 .venv/Scripts/ruff format . && .venv/Scripts/ruff check . && .venv/Scripts/mypy app tests alembic/env.py
 .venv/Scripts/pytest                    # uses TEST_DATABASE_URL (nest_test), migrates it to head
+.venv/Scripts/python -m app.cli create-user --phone +374... --first-name A --last-name B --role ADMIN   # prompts for the password; WORKER needs --employee-code
 
 # manager web (apps/manager-web)
 npm run dev                             # http://localhost:3001
@@ -145,9 +147,10 @@ Before reporting work as done, run the formatter, linter/analyzer and tests for 
 - The Android toolchain is OK: SDK 37, licenses accepted, Java from Android Studio's bundled JBR (`F:\Android\Android Studio\jbr`).
   - Installed for Flutter builds: NDK `28.2.13676358` (r28c), plus Platform 35 and CMake 3.22.1, which Gradle installed automatically.
   - **`sdkmanager` is deprecated here and breaks on `;` package names.** Install SDK packages with the new CLI instead: `C:\Users\armhy\AppData\Local\Android\sdk\cmdline-tools\latest\bin\android.exe --sdk=C:\Users\armhy\AppData\Local\Android\sdk sdk install ndk/<version>` (list packages with `sdk list --all`).
-- **No Android emulator (AVD) or phone is available** as of 2026-10-07. `flutter build apk --flavor dev|prod` and the tests work without one, but `flutter run` on Android needs an AVD or a connected device.
 - A native Windows PostgreSQL already listens on **5432**; the project's Docker PostgreSQL is mapped to host port **5433**. Don't stop or reuse the native one.
 - Docker Desktop must be running for `docker compose`.
+- `apps/worker-mobile/android/gradle.properties` sets `kotlin.incremental=false`. The project is on `F:` and the pub cache is on `C:`, which breaks Kotlin incremental compilation of plugins on Windows. Keep the setting.
+- Emulator: AVD `Pixel_9_Pro` (Android 16, API 36). Launch it with `flutter emulators --launch Pixel_9_Pro`; if it hangs "offline", restart it with `emulator -avd Pixel_9_Pro -no-snapshot-load`.
 - Local ports:
   - nest_web: 3000
   - manager-web: 3001

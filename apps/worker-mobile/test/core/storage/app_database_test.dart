@@ -10,6 +10,6 @@ void main() {
     final row = await db.customSelect('SELECT 1 AS one').getSingle();
 
     expect(row.read<int>('one'), 1);
-    expect(db.schemaVersion, 1);
+    expect(db.schemaVersion, 2);
   });
 }
