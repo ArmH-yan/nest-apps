@@ -5,7 +5,6 @@ from enum import StrEnum
 from sqlalchemy import (
     BigInteger,
     Boolean,
-    Enum,
     ForeignKey,
     Identity,
     String,
@@ -15,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TimestampMixin
+from app.db.base import Base, TimestampMixin, text_enum
 
 
 class UserRole(StrEnum):
@@ -32,19 +31,6 @@ class UserLocale(StrEnum):
     ID = "id"
 
 
-def _text_enum(enum: type[StrEnum], name: str) -> Enum:
-    """Stored as text + CHECK constraint (ARCHITECTURE §8), so adding a value is a
-    plain constraint change instead of an ALTER TYPE."""
-    return Enum(
-        enum,
-        name=name,
-        native_enum=False,
-        create_constraint=True,
-        length=16,
-        values_callable=lambda members: [m.value for m in members],
-    )
-
-
 class User(TimestampMixin, Base):
     __tablename__ = "users"
 
@@ -56,9 +42,9 @@ class User(TimestampMixin, Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     first_name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[str] = mapped_column(String(100))
-    role: Mapped[UserRole] = mapped_column(_text_enum(UserRole, "user_role"))
+    role: Mapped[UserRole] = mapped_column(text_enum(UserRole, "user_role"))
     locale: Mapped[UserLocale] = mapped_column(
-        _text_enum(UserLocale, "user_locale"), server_default=UserLocale.HY.value
+        text_enum(UserLocale, "user_locale"), server_default=UserLocale.HY.value
     )
     telegram_chat_id: Mapped[int | None] = mapped_column(BigInteger)
     must_change_password: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))

@@ -24,10 +24,16 @@ depends_on: str | Sequence[str] | None = None
 def _timestamps() -> list[sa.Column[sa.DateTime]]:
     return [
         sa.Column(
-            "created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
     ]
 
@@ -86,7 +92,10 @@ def upgrade() -> None:
         sa.Column("user_agent", sa.String(length=255), nullable=True),
         sa.Column("device_id", sa.String(length=128), nullable=True),
         sa.Column(
-            "created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.ForeignKeyConstraint(
             ["replaced_by_id"],
@@ -117,7 +126,10 @@ def upgrade() -> None:
         ),
         sa.Column("ip", postgresql.INET(), nullable=True),
         sa.Column(
-            "created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.ForeignKeyConstraint(
             ["user_id"], ["users.id"], name=op.f("fk_audit_logs_user_id_users")

@@ -446,8 +446,8 @@ id
 company_id
 name                 e.g. "Davtashen residential block 3"
 address
-latitude
-longitude
+latitude             numeric(9,6)
+longitude            numeric(9,6)
 location_confirmed   boolean (pin placed/checked by a person)
 geofence_radius_m    nullable → falls back to settings.default_geofence_radius_m
 access_notes         gate code, foreman, parking, height notes
@@ -509,9 +509,10 @@ One engagement at one site.
 
 ```text
 id
-reference
+reference        P-YYYY-NNNN (reference_counters, per Yerevan year)
+name             e.g. "Davtashen Residential" (shown as the project in the worker app)
 site_id
-company_id
+company_id       nullable (private persons)
 primary_contact_id
 service_slug
 status           LEAD | SURVEY | QUOTED | WON | LOST | INSTALLED | DISMANTLED | CLOSED
@@ -633,7 +634,9 @@ ALTER TABLE visit_assignments
   WHERE (status <> 'CANCELLED');
 ```
 
-When this constraint is violated, the API returns `409 WORKER_ALREADY_BOOKED`.
+When this constraint is violated, the API returns `409 WORKER_ALREADY_BOOKED`. The service checks first so the error can name the conflicting visit (`details.conflicting_visit_id`); the constraint still catches races. Ranges are `[)`, so back-to-back visits don't overlap.
+
+Also: `UNIQUE (visit_id, worker_id)` (a removed worker's row is CANCELLED and reused when they are added back) and a partial unique index allowing one active LEAD per visit.
 
 **Worker pay (decided 2026-10-08):** each assignment pays a fixed `pay_amount` that the manager enters when assigning the crew (it can be edited until the timesheet is approved; changes are audited). There are no hourly or daily rates. A task counts as **earned** once its timesheet is approved (`reviewed_at` is set, status `SUBMITTED`). The worker app shows the current Yerevan month's approved count and total (`GET /worker/earnings`, §18). Workers see only their own pay; job and quote prices stay hidden (§6).
 
@@ -1205,6 +1208,8 @@ GET    /quotes/{id}/pdf
 ```
 
 ### Jobs & scheduling
+
+`PUT /visits/{id}/crew` takes the **complete** crew `{members: [{worker_id, role, pay_amount}]}` with exactly one LEAD. Workers left out are cancelled (a SUBMITTED one can't be removed → `409 ASSIGNMENT_ALREADY_SUBMITTED`). A crew appearing or disappearing moves the job DRAFT ⇄ SCHEDULED, and a scheduled SURVEY job moves the project to SURVEY. `DELETE /visits/{id}` cancels; nothing is hard-deleted. Visit times must include a timezone.
 
 ```text
 POST   /jobs
@@ -1853,6 +1858,8 @@ Backend: Docker Compose, PostgreSQL, FastAPI skeleton, Alembic, users/auth, audi
 Status (2026-10-08): built. Users/workers/refresh tokens/audit logs (migration `0002`), auth endpoints (§7 "As built"), and GitHub Actions CI for all three apps (`.github/workflows/ci.yml`). Added to the worker app at the same time: the monthly earnings header (mock data until `/worker/earnings` exists in Phase 2) and the round flip timer.
 
 ## Phase 2 — Scheduling core + worker API
+
+Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. Next: 2b worker API, 2c Flutter HTTP client, 2d seed script + field test.
 
 ```text
 Companies, contacts, sites (pin + radius), projects, jobs, visits, crew assignment, constraints

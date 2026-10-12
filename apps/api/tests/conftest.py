@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from alembic import command
 from app.core.config import get_settings
+from app.db.models import Base
 from app.db.session import get_engine, get_sessionmaker
 
 API_DIR = Path(__file__).resolve().parents[1]
@@ -42,8 +43,9 @@ def migrated_database() -> Iterator[None]:
     yield
 
 
-# Business tables emptied after every test (add new ones here).
-_TABLES = ("audit_logs", "refresh_tokens", "workers", "users")
+# Every table is emptied after each test, except reference data seeded by migrations.
+_KEEP = {"services"}
+_TABLES = [t.name for t in Base.metadata.sorted_tables if t.name not in _KEEP]
 
 
 @pytest.fixture(autouse=True)

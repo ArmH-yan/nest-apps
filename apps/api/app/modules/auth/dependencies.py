@@ -88,3 +88,7 @@ def require_roles(*roles: UserRole) -> Callable[[AuthContext], Awaitable[AuthCon
         return auth
 
     return dependency
+
+
+ManagerAuth = Annotated[AuthContext, Depends(require_roles(UserRole.MANAGER, UserRole.ADMIN))]
+"""Manager/admin endpoints (ARCHITECTURE §30: workers get 403)."""

@@ -5,8 +5,9 @@ autogenerate produces clean, reviewable migrations (ARCHITECTURE §22).
 """
 
 from datetime import datetime
+from enum import StrEnum
 
-from sqlalchemy import DateTime, MetaData, func
+from sqlalchemy import DateTime, Enum, MetaData, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 NAMING_CONVENTION = {
@@ -28,4 +29,18 @@ class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+def text_enum(enum: type[StrEnum], name: str, length: int = 16) -> Enum:
+    """Stored as text + CHECK constraint (ARCHITECTURE §8), so adding a value is a
+    plain constraint change instead of an ALTER TYPE. The constraint is named
+    `ck_<table>_<name>`."""
+    return Enum(
+        enum,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        length=length,
+        values_callable=lambda members: [m.value for m in members],
     )
