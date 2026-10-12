@@ -32,7 +32,7 @@ When a change affects the design, update these docs **in the same change**. Keep
 - **Each crew member tracks their own time.** A worker app "Task" is a `visit_assignment` (one worker × one visit). The crew LEAD also records materials and inspection checklists.
 - **Quotes and on-site materials tracking are v1.**
 - Reporting = Metabase on read-only `reporting` views.
-- **Crew chat (v1, Phase 3b, ARCHITECTURE §26a):** one group thread per job (crew + managers), stored in PostgreSQL, delivered via FCM. Server-side machine translation into each reader's locale (Google Cloud Translation behind a `Translator` interface). Managers can also read and reply through a **Telegram bot**. No WhatsApp.
+- **Crew chat (v1, Phase 3b, ARCHITECTURE §26a) = Telegram only.** Everyone chats privately with the NEST Telegram bot, which relays messages per job (crew + managers) and translates them server-side into each reader's locale (Google Cloud Translation behind a `Translator` interface). The NEST apps have no chat screen; they only link Telegram and deep-link to the bot. No WhatsApp, no in-app chat in v1.
 - Worker app languages: hy, ru, en, hi (Hindi), id (Indonesian).
 - **Push = Firebase Cloud Messaging** (Android; APNs for iOS via FCM). Firebase is **only** the push transport: never add Firebase Auth, Firestore, Realtime Database, Storage, App Distribution, Crashlytics/Analytics or other Firebase services. No Supabase. Notification content and read state live in PostgreSQL (ARCHITECTURE §26).
 

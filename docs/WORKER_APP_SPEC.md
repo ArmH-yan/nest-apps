@@ -313,10 +313,7 @@ POST /api/v1/worker/files/{uuid}/confirm
 PUT  /api/v1/worker/tasks/{taskId}/completion/{uuid}
 GET  /api/v1/worker/history?cursor=
 GET  /api/v1/worker/earnings?month=YYYY-MM    → { month, approved_tasks, approved_amount, currency }
-GET  /api/v1/worker/chats                                  (Phase 3b, §26a)
-GET  /api/v1/worker/chats/{threadId}/messages?after=&before=
-PUT  /api/v1/worker/chats/{threadId}/messages/{uuid}
-POST /api/v1/worker/chats/{threadId}/read
+POST /api/v1/me/telegram-link · DELETE /api/v1/me/telegram-link   (Phase 3b, §26a)
 GET  /api/v1/worker/notifications?cursor=
 POST /api/v1/worker/notifications/{id}/read
 PUT  /api/v1/worker/devices/{fcmToken}
@@ -627,26 +624,15 @@ Tasks that are waiting for sync or failed to sync are listed at the top with the
 
 ---
 
-## CREW CHAT (`/chats/:threadId`), Phase 3b
+## CREW CHAT (Telegram), Phase 3b
 
-The design is in ARCHITECTURE §26a. There is one group thread per **job**: the crew plus the managers. Each message is shown in the reader's language.
+The chat runs entirely in the **NEST Telegram bot** (ARCHITECTURE §26a). The bot relays messages between crew members and managers of a job and translates each one into the reader's language. The app has **no chat screen**. It only:
 
-Entry points:
-- Task details and the Work screen show a **Crew chat** button with an unread badge for that task's job.
-- A `CHAT_MESSAGE` push opens the thread directly.
+- **Profile → Connect Telegram.** Calls `POST /api/v1/me/telegram-link` and opens the returned `t.me/...?start=link_<code>` URL (`url_launcher`, external app). Once linked, `GET /me` returns `telegram_linked: true`, and the button becomes "Telegram connected" with a "Disconnect" action (`DELETE /api/v1/me/telegram-link`).
+- **"Crew chat" button** on task details and the Work screen. It opens `t.me/<bot>?start=job_<jobId>`, which also makes this job the current chat job in the bot. If Telegram isn't linked yet, the button starts the linking flow instead. The bot username comes from `/worker/config` (`telegram_bot_username`), never hard-coded.
+- If Telegram isn't installed, the link opens in the browser, which offers to install it.
 
-Screen:
-- Messages newest at the bottom, grouped by day (Yerevan time). Your own messages are on the right.
-- Each bubble shows the sender's name and role (LEAD / manager). It shows the text in your language, with a small "Translated · show original" link when it was translated.
-- The input field has a send button. Max 2000 characters. Text only in v1.
-
-Offline:
-- Sending = local `chat_messages` row + outbox item (`PUT /worker/chats/{thread}/messages/{uuid}`) in **one drift transaction**, like every other write. A message shows a clock icon until it is sent, then a check mark. A failed message gets a retry action.
-- Received messages are cached in drift, so threads open offline. The app refreshes on open, on push and on resume.
-
-Data:
-- Domain models: `ChatThread` (id, jobId, jobTitle, unreadCount, lastMessage) and `ChatMessage` (id, threadId, senderId, senderName, senderRole, text, originalText, originalLang, translated, createdAt, mine, syncState).
-- A `ChatRepository` over drift + `NestApi`, shared by mock and API mode. `MockNestApi` gets a seeded thread for `job-12`, with a manager message in Armenian that is "translated" into the worker's locale.
+Mock mode: `MockNestApi` returns a fake link and flips `telegramLinked` after the call, so the flow can be tested without a bot.
 
 ---
 

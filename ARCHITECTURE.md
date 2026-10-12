@@ -345,7 +345,7 @@ first_name
 last_name
 role             ADMIN | MANAGER | WORKER
 locale           hy | ru | en | hi | id   (hi = Hindi, id = Indonesian; worker-facing only)
-telegram_chat_id nullable (managers, optional)
+telegram_chat_id nullable (linked via the NEST bot, §26a; all roles)
 must_change_password
 is_active
 created_at, updated_at
@@ -1081,7 +1081,7 @@ Every endpoint is scoped to the authenticated worker. The writes are **idempoten
 
 ```http
 GET  /api/v1/me
-GET  /api/v1/worker/config                       # geofence default, accuracy limit, min photos, start window
+GET  /api/v1/worker/config                       # geofence default, accuracy limit, min photos, start window, telegram_bot_username
 GET  /api/v1/worker/tasks?from=&to=              # assignments + visit + job + site (lat/lng, radius) + crew
 GET  /api/v1/worker/tasks/{assignment_id}
 GET  /api/v1/worker/tasks/{assignment_id}/expected-materials   # dismantling list
@@ -1161,7 +1161,6 @@ Versioned REST under `/api/v1/`. Operational endpoints that are not part of the 
 /api/v1/materials
 /api/v1/files
 /api/v1/settings
-/api/v1/chats                           (job crew chat, §26a)
 /api/v1/integrations/telegram/webhook   (Telegram bot, secret header)
 /api/v1/worker/...                      (worker-scoped, §18)
 ```
@@ -1396,7 +1395,7 @@ Events:
 
 ```text
 To workers:   task assigned · task changed · task cancelled · reminder (evening before / morning of)
-              · submission accepted · new chat message (push only, §26a)
+              · submission accepted
 To managers:  new website request · task submitted · flagged timesheet · NO_ACCESS reported
               · quote expiring
 ```
@@ -1405,64 +1404,65 @@ Notification text uses the recipient's locale (hy/ru/en/hi/id).
 
 ---
 
-# 26a. Crew Chat with Translation
+# 26a. Crew Chat with Translation (Telegram bot)
 
-Decided 2026-10-12. This is v1, built in **Phase 3b** (§41). Crews include foreign workers (Hindi, Indonesian), so each message is shown to each reader in their own language.
+Decided 2026-10-12; changed the same day to **Telegram only**. This is v1, built in **Phase 3b** (§41). Crews include foreign workers (Hindi, Indonesian), so every message reaches each reader in their own language. Every worker installs Telegram. The NEST apps have **no chat screen**; they only link the account and open the bot.
 
-### Scope
+### How it works: the bot relays messages
 
-- **One group thread per job.** Members are every worker with a non-cancelled assignment on any visit of the job, plus all MANAGER/ADMIN users. A per-job thread keeps one conversation across the days of a multi-day installation; a per-visit (one-day) thread would split it up. Membership is computed in the query, not stored. A worker who is unassigned loses access, and a worker who is not a member gets `404`.
-- Text messages only in v1. Photos, voice notes and direct (1:1) chats come later.
-- Workers chat in the NEST app. Managers chat in the manager web app **or in Telegram** (bridge below). There is no WhatsApp: the Business API needs Meta verification, charges per conversation, and has a 24-hour messaging window.
+Normal Telegram groups can't be used: every message would appear once per language. Instead, each person chats **privately with the NEST bot**, and the bot relays messages:
+
+```text
+Ravi (hi) ──► NEST bot ──► API: store message, detect language, translate
+                              ├──► Arman (hy):  "[J-12 Davtashen · Building A] Ravi (worker): …" in Armenian
+                              ├──► Budi (id):   same, in Indonesian
+                              └──► managers:    same, each in their locale
+```
+
+- **One thread per job.** Members are every worker with a non-cancelled assignment on any visit of the job, plus all MANAGER/ADMIN users with a linked Telegram. Membership is computed when a message is sent, not stored, so a worker who is unassigned stops receiving messages.
+- **Which job a message belongs to:**
+  1. A **reply** to a relayed message goes to that message's job (`telegram_message_links`).
+  2. Otherwise it goes to the sender's **current job**. The current job is set by the "Crew chat" button in the app (deep link `t.me/<bot>?start=job_<id>`), or by `/job`, which shows inline buttons. If the worker has exactly one job today, that job is used automatically.
+  3. If the job is still unclear, the bot asks with inline buttons and does not send until a job is chosen.
+- **Content:** text is translated. Photos and voice notes are relayed as they are (`copyMessage`), with a translated caption. Photos are also stored as job `files` later if needed (not v1).
+- Messages are not edited or deleted through the bot in v1. An admin can hide a message (`hidden_at`, audited); hidden messages are not relayed.
 
 ### Translation
 
-- The sender writes in any language. When the message reaches the server, a background task (procrastinate, enqueued in the same transaction) detects the source language and translates the message into every **other** locale used by the thread members.
-- Readers see the text in their own locale with a "show original" toggle. Until the translation is ready (or if it fails), the original is shown, so a translation never blocks delivery.
-- Provider: **Google Cloud Translation** (supports hy/ru/en/hi/id), behind a `Translator` interface in `app/modules/chat/translation.py` so it can be swapped. Setting `GOOGLE_TRANSLATE_API_KEY`. This is a Google Cloud API, not a Firebase service. Machine translation of chat is the only exception to "no AI features" (§43).
-- Translations are stored, never recomputed: each message is translated once per language.
+- The API detects the source language and translates into every **other** locale used by the recipients. Each translation is stored once per language (`chat_message_translations`).
+- Provider: **Google Cloud Translation** (supports hy/ru/en/hi/id), behind a `Translator` interface in `app/modules/chat/translation.py`. Setting `GOOGLE_TRANSLATE_API_KEY`. This is a Google Cloud API, not a Firebase service. Machine translation of chat is the only exception to "no AI features" (§43).
+- If translation fails, the original is relayed with a "(not translated)" note. Delivery is never blocked by translation.
 
-### Telegram bridge (managers)
+### Linking Telegram (workers and managers)
 
-- A manager links Telegram once: the manager web app shows a `t.me/<bot>?start=<one-time code>` link, and the bot stores `users.telegram_chat_id`.
-- New chat messages go to each linked manager's Telegram, translated into the manager's locale and prefixed with the job reference and the sender's name.
-- If the manager **replies** to that Telegram message, the reply is posted to the job thread as the manager's message. The `telegram_message_links` table maps Telegram message IDs back to threads. A message that isn't a reply gets a short help answer.
-- Webhook: `POST /api/v1/integrations/telegram/webhook`. It is verified with Telegram's `X-Telegram-Bot-Api-Secret-Token` header (setting `TELEGRAM_WEBHOOK_SECRET`). The same bot also sends the manager alerts from §26.
+- The worker app (Profile → **Connect Telegram**) and the manager web app call `POST /api/v1/me/telegram-link` → `{ url, expires_at }`, a `t.me/<bot>?start=link_<one-time code>` link valid for 15 minutes. Opening it in Telegram and pressing Start stores `users.telegram_chat_id`.
+- `GET /api/v1/me` returns `telegram_linked: bool`. The app shows "Connect Telegram" until it is linked, then "Open crew chat".
+- Unlinking: `/stop` in the bot, or `DELETE /api/v1/me/telegram-link`. Deactivating a user unlinks them too.
+
+### Processing
+
+- Webhook: `POST /api/v1/integrations/telegram/webhook`, verified with Telegram's `X-Telegram-Bot-Api-Secret-Token` header (`TELEGRAM_WEBHOOK_SECRET`). The handler stores the update and the message in one transaction, enqueues a procrastinate task and returns `200` immediately. Updates are deduplicated by `update_id`, because Telegram retries.
+- Task: translate → send to each recipient (respecting Telegram's rate limits; retried on `429` with `retry_after`) → store `telegram_message_links`.
+- The same bot sends the manager alerts from §26. Worker task pushes stay on FCM.
 
 ### Data model
 
 ```text
-chat_threads            id, job_id (unique), created_at, updated_at
-chat_messages           id uuid (client-generated → idempotent PUT), thread_id, sender_user_id,
-                        body text (≤ 2000 chars), source_lang nullable (detected),
-                        via (APP | WEB | TELEGRAM), client_created_at, received_at, created_at
-chat_message_translations  message_id, lang, body, provider, created_at   PK (message_id, lang)
-chat_read_states        thread_id, user_id, last_read_at                    PK (thread_id, user_id)
-telegram_link_codes     code (unique), user_id, expires_at, used_at
-telegram_message_links  telegram_chat_id, telegram_message_id, chat_message_id
-                        PK (telegram_chat_id, telegram_message_id)
+chat_threads              id, job_id (unique), created_at, updated_at
+chat_messages             id uuid, thread_id, sender_user_id, kind (TEXT | PHOTO | VOICE),
+                          body text nullable (≤ 4000), source_lang nullable,
+                          telegram_chat_id, telegram_message_id, hidden_at, created_at
+chat_message_translations message_id, lang, body, provider, created_at   PK (message_id, lang)
+telegram_updates          update_id (PK), received_at        (dedup of webhook retries)
+telegram_link_codes       code (unique), user_id, expires_at, used_at
+telegram_chat_contexts    user_id (PK), current_thread_id, updated_at
+telegram_message_links    telegram_chat_id, telegram_message_id, chat_message_id
+                          PK (telegram_chat_id, telegram_message_id)
 ```
 
-Messages are never edited or deleted by users in v1. An admin can hide a message (`hidden_at`, audited).
+### Later (only if needed)
 
-### API
-
-Worker (§18):
-
-```http
-GET  /api/v1/worker/chats                              # my job threads + unread counts + last message
-GET  /api/v1/worker/chats/{thread_id}/messages?after=&before=   # newest first, paginated
-PUT  /api/v1/worker/chats/{thread_id}/messages/{uuid}  # { body, created_at } — idempotent
-POST /api/v1/worker/chats/{thread_id}/read             # { last_read_at }
-```
-
-Each message is returned as `{ id, sender {id, name, role}, text, original_text, original_lang, translated, created_at, mine }`. `text` is in the caller's locale when a translation exists.
-
-Manager: the same endpoints under `/api/v1/chats` (all job threads), plus `POST /api/v1/me/telegram-link` → `{ url, expires_at }`.
-
-### Delivery
-
-A new message enqueues: translate → for each member except the sender, an FCM push (type `CHAT_MESSAGE`, text in the recipient's locale) and the Telegram send. Chat pushes are **not** stored in the `notifications` list; the thread's unread count is the read state.
+A read-only chat history per job in the manager web app; an in-app chat screen. Both read the same tables.
 
 ---
 
@@ -1872,9 +1872,10 @@ FCM push + reminders
 ## Phase 3b — Crew chat with translation (§26a)
 
 ```text
-chat tables + /worker/chats + /chats API; translation task (Google Cloud Translation)
-Flutter: crew chat screen per job (offline outbox, unread badges, CHAT_MESSAGE push)
-Manager web: chat panel per job; Telegram bot link + reply bridge
+Telegram bot (webhook, relay, job context, inline buttons); chat tables; translation task
+Telegram linking: POST/DELETE /me/telegram-link, telegram_linked in /me
+Flutter: Profile → Connect Telegram; "Crew chat" button on task details / work screen (deep link)
+Manager web: Connect Telegram in profile
 ```
 
 ## Phase 4 — Intake
@@ -1922,7 +1923,7 @@ Travel time / route planning; live location; BigQuery
 - Projects; jobs with visits; crew assignment; calendar
 - Worker management + time off + password reset
 - Timesheets review
-- Crew chat per job; Telegram link for replying from Telegram (§26a)
+- Connect Telegram (crew chat runs in the NEST Telegram bot, §26a)
 - Quotes with PDF
 - Materials on site
 
@@ -1936,7 +1937,7 @@ Travel time / route planning; live location; BigQuery
 - Offline-first with outbox sync and clear sync states
 - History, profile (language hy/ru/en/hi/id, permissions, logout)
 - Push + in-app notifications
-- Crew chat per job with automatic translation (§26a)
+- Crew chat per job in the NEST Telegram bot with automatic translation; Connect Telegram + "Crew chat" button (§26a)
 
 ### Backend
 
