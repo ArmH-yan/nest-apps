@@ -90,7 +90,7 @@ Every client app goes through the API. The only other thing allowed to connect t
 | ORM / migrations | SQLAlchemy 2.x + Alembic | Database access and schema migrations |
 | Validation | Pydantic | API/request validation |
 | Background tasks | Postgres-backed queue (e.g. `procrastinate`) | Push, reminders, PDF generation |
-| File storage | S3-compatible (Cloudflare R2 / Hetzner Object Storage; MinIO locally) | Photos, quote PDFs |
+| File storage | S3-compatible (Cloudflare R2 / Hetzner Object Storage; RustFS locally) | Photos, quote PDFs |
 | Push notifications | Firebase Cloud Messaging (FCM) for Android; APNs for iOS (delivered via FCM) | Worker app push. **Firebase is used only as the push transport** — no Firebase Auth, Firestore, Realtime Database, Storage, App Distribution or other Firebase services |
 | Manager alerts | In-app list + Telegram bot (optional) | New requests, flagged timesheets |
 | Maps | Google Maps (display) + deep links to Google Maps / Yandex Navigator | Site location, navigation |
@@ -682,7 +682,9 @@ client_distance_m
 client_verified  boolean
 server_distance_m   (recomputed by the server from the site pin)
 radius_m            (radius applied)
-server_verified     boolean
+server_verified     boolean  (inside the radius and accurate enough)
+override_reason     nullable (manager override, Phase 3)
+overridden_by       nullable
 ```
 
 ### assignment_completions
@@ -694,6 +696,8 @@ completed_at     device timestamp
 completion_location_check_id
 reported_work_seconds
 reported_break_seconds
+work_seconds        (recomputed from time_entries)
+break_seconds
 comment
 received_at
 ```
@@ -1088,6 +1092,7 @@ GET  /api/v1/worker/config                       # geofence default, accuracy li
 GET  /api/v1/worker/tasks?from=&to=              # assignments + visit + job + site (lat/lng, radius) + crew
 GET  /api/v1/worker/tasks/{assignment_id}
 GET  /api/v1/worker/tasks/{assignment_id}/expected-materials   # dismantling list
+GET  /api/v1/worker/catalog                      # trackable materials, names in the user's locale (hi/id → en)
 
 PUT  /api/v1/worker/location-checks/{uuid}
 PUT  /api/v1/worker/time-entries/{uuid}          # create, then update with ended_at
@@ -1111,6 +1116,25 @@ Rules:
 - A worker can never reach another worker's assignments; the API returns `404`.
 - Every PUT can be replayed. If it arrives again with the same body, the server returns `200` with the stored record. If it arrives with a different body for an already-finalized record, the server returns `409`.
 - Requests include `X-Device-Time`. The server stores `client_clock_offset_s` and flags large differences.
+**As built (Phase 2b, 2026-10-12)** — `app/modules/{worker_api,timetracking,materials,files,notifications}`:
+
+- Task ids are assignment ids (integers). `GET /worker/tasks` returns tasks whose scheduled start is in `[from, to]` (at most ~2 months), **including cancelled ones**, so the app can show "cancelled by your manager". Each task has site pin, radius (null → config default), project name, customer, site contact and crew.
+- Writes, their replay rules and stable error codes:
+
+  | Endpoint | Same body again | Rejections |
+  |---|---|---|
+  | `PUT location-checks/{uuid}` | 200 | `LOCATION_CHECK_FINALIZED` (changed body) |
+  | `PUT time-entries/{uuid}` | 200 | only `ended_at` may be added to an open entry, else `TIME_ENTRY_FINALIZED`; `TIME_ENTRY_OVERLAP` (`no_time_overlap`) |
+  | `PUT material-movements/{uuid}` | 200 | `NOT_CREW_LEAD` (403), `MATERIAL_FINALIZED` |
+  | `POST files/{uuid}/presign` | fresh URL, same key; `already_uploaded` once confirmed | `FILE_TOO_LARGE` (422) |
+  | `POST files/{uuid}/confirm` | 200 | `FILE_NOT_UPLOADED` (object not in storage yet) |
+  | `PUT tasks/{id}/completion/{uuid}` | 200 | `TASK_ALREADY_SUBMITTED` (other uuid), `START_CHECK_MISSING`, `PHOTOS_NOT_UPLOADED` (+`photo_ids`), `NOT_ENOUGH_PHOTOS`, `MATERIALS_REQUIRED` |
+
+  Any new write on a cancelled task → `409 TASK_CANCELLED`; on a submitted one → `409 TASK_ALREADY_SUBMITTED`. Replays of already stored records still return 200.
+- The server recomputes the GPS distance from the site pin. `OUTSIDE_GEOFENCE` (any purpose except MANUAL), `LOW_ACCURACY` and `MOCK_LOCATION` are added to `visit_assignments.review_flags`; `CLOCK_SKEW` when `X-Device-Time` differs by more than `clock_skew_flag_seconds`; `LATE_SYNC` when a time entry arrives > 24 h after it ended; `TOTALS_MISMATCH` when reported totals differ from the recomputed ones by > 60 s. None of these reject the data.
+- The first WORK entry moves the assignment ASSIGNED → IN_PROGRESS and the job SCHEDULED → IN_PROGRESS. Completion closes open entries at `completed_at`, recomputes totals, then: visit DONE when all active assignments are SUBMITTED → job COMPLETED when no PLANNED visit remains → project INSTALLED / DISMANTLED for installation / dismantling jobs (only if the project is at the step before).
+- In-app notifications are created in the same transaction for TASK_ASSIGNED (added to a crew), TASK_CHANGED (visit moved), TASK_CANCELLED (removed, visit or job cancelled) and SUBMISSION_ACCEPTED, in the recipient's locale. FCM delivery is Phase 3.
+- `PUT /worker/devices/{fcm_token}` and the inspection checklist (`PUT /worker/checklists/{uuid}`) are not built yet (Phase 3 / Phase 5).
 - `earnings` counts the worker's own approved assignments (`reviewed_at` set) whose visit date falls in the given Yerevan month, and sums their `pay_amount` (assignments without one count as 0). `approved_amount` is a decimal string such as `"80000.00"`, never a float.
 - The server does **not reject** late or offline data because of its timestamps. It stores the data and flags it for manager review. Hard rejections are limited to authorization, impossible states (e.g. completing a cancelled task) and overlapping time entries.
 
@@ -1332,7 +1356,7 @@ SyncService (on connectivity change, app resume, periodic while foregrounded,
 
 # 24. File and Photo Storage
 
-PostgreSQL stores **metadata only**. The file bytes go to S3-compatible object storage (MinIO locally).
+PostgreSQL stores **metadata only**. The file bytes go to S3-compatible object storage. Locally this is **RustFS** (docker compose `storage`, port 9000): MinIO's Docker images stopped being published in 2026. The code only uses the S3 API (`app/modules/files/storage.py`), so any S3 provider works.
 
 Uploads use **presigned URLs**, so large files never pass through the API:
 
@@ -1346,6 +1370,8 @@ Worker app                 FastAPI                  Object storage
 ```
 
 - Downloads use short-lived presigned GET URLs.
+- Presigned URLs are signed for a host name, so the API signs with `S3_PUBLIC_ENDPOINT_URL` (the host phones can reach; `http://10.0.2.2:9000` for the Android emulator) and checks uploads with `S3_ENDPOINT_URL`.
+- Object keys: `assignments/{assignment_id}/{file_uuid}.jpg`. Max size `MAX_UPLOAD_BYTES` (15 MB); images only (`image/jpeg|png|heic|webp`).
 - The storage provider can be changed without changing the database model.
 
 ---
@@ -1707,13 +1733,13 @@ Public intake with/without service key
 PostgreSQL 17    localhost:5433   docker compose (host port; 5432 may be taken by a native install)
 FastAPI          localhost:8000   local Python venv (Swagger at /docs)
 Manager web app  localhost:3001   npm run dev
-MinIO            localhost:9000   added to docker compose when file uploads are built
+S3 storage       localhost:9000   docker compose `storage` (RustFS); `python -m app.cli init-storage` creates the bucket
 Metabase         localhost:3030   added to docker compose when reporting is built (optional profile)
 ```
 
 Development decisions (accepted 2026-10-07):
 
-- Docker Compose runs **only PostgreSQL** for now. The API runs directly from the local Python virtual environment (`apps/api/.venv`); an API container is added with the production deployment work.
+- Docker Compose runs **PostgreSQL and the S3 storage** (storage added 2026-10-12 with file uploads, as planned). The API runs directly from the local Python virtual environment (`apps/api/.venv`); an API container is added with the production deployment work.
 - PostgreSQL version: **17**.
 - The manager web app has **no Tailwind** for now; a styling approach is chosen when manager UI work starts.
 
@@ -1859,7 +1885,7 @@ Status (2026-10-08): built. Users/workers/refresh tokens/audit logs (migration `
 
 ## Phase 2 — Scheduling core + worker API
 
-Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. Next: 2b worker API, 2c Flutter HTTP client, 2d seed script + field test.
+Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. **2b done (2026-10-12)**: the `/worker/*` API (§18 "As built"), photo storage, notifications, migration `0005`. Next: 2c Flutter HTTP client, 2d seed script + field test.
 
 ```text
 Companies, contacts, sites (pin + radius), projects, jobs, visits, crew assignment, constraints

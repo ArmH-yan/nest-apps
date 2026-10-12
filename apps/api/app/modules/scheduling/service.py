@@ -18,9 +18,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.time import yerevan_short
 from app.core.transitions import SYSTEM, Actor
 from app.db.crud import apply_patch, get_or_404
 from app.modules.audit import service as audit
+from app.modules.notifications import service as notifications
+from app.modules.notifications.models import NotificationType
 from app.modules.projects import service as projects
 from app.modules.projects.models import Project, ProjectStatus
 from app.modules.scheduling.models import (
@@ -114,6 +117,20 @@ async def _sync_job_after_crew_change(session: AsyncSession, job: Job) -> None:
         set_job_status(session, job, JobStatus.DRAFT, SYSTEM, None)
 
 
+async def _tell(
+    session: AsyncSession, assignment: VisitAssignment, job: Job, type_: NotificationType
+) -> None:
+    """In-app notification for the assigned worker (§26)."""
+    await notifications.notify_worker(
+        session,
+        assignment.worker_id,
+        type_,
+        data={"assignment_id": assignment.id, "job_id": job.id},
+        task=job.title,
+        when=yerevan_short(assignment.period.lower),
+    )
+
+
 def _cancel_assignment(assignment: VisitAssignment, actor: Actor) -> None:
     ASSIGNMENT_TRANSITIONS.check(assignment.status, AssignmentStatus.CANCELLED, actor)
     assignment.status = AssignmentStatus.CANCELLED
@@ -174,6 +191,50 @@ async def _flush_or_booked(session: AsyncSession) -> None:
                 "WORKER_ALREADY_BOOKED", "A worker is already assigned at this time."
             ) from exc
         raise
+
+
+# --- side effects of worker activity (called by timetracking) -----------------------
+
+
+def on_work_started(session: AsyncSession, job: Job) -> None:
+    """The first time entry of any crew member: job SCHEDULED → IN_PROGRESS."""
+    if job.status is JobStatus.SCHEDULED:
+        set_job_status(session, job, JobStatus.IN_PROGRESS, SYSTEM, None)
+
+
+_COMPLETES_PROJECT = {
+    JobType.INSTALLATION: ProjectStatus.INSTALLED,
+    JobType.DISMANTLING: ProjectStatus.DISMANTLED,
+}
+
+
+async def on_assignment_submitted(session: AsyncSession, visit: JobVisit, job: Job) -> None:
+    """Visit DONE when every active assignment is SUBMITTED; job COMPLETED when no
+    PLANNED visit remains; installation/dismantling then moves the project (§10, §11)."""
+    remaining = await session.scalar(
+        select(
+            exists().where(
+                VisitAssignment.visit_id == visit.id,
+                VisitAssignment.status.in_(
+                    [AssignmentStatus.ASSIGNED, AssignmentStatus.IN_PROGRESS]
+                ),
+            )
+        )
+    )
+    if remaining:
+        return
+    VISIT_TRANSITIONS.check(visit.status, VisitStatus.DONE, SYSTEM)
+    visit.status = VisitStatus.DONE
+    await session.flush()
+    planned = await session.scalar(
+        select(exists().where(JobVisit.job_id == job.id, JobVisit.status == VisitStatus.PLANNED))
+    )
+    if planned or job.status is not JobStatus.IN_PROGRESS:
+        return
+    set_job_status(session, job, JobStatus.COMPLETED, SYSTEM, None)
+    if (target := _COMPLETES_PROJECT.get(job.job_type)) is not None:
+        project = await get_or_404(session, Project, job.project_id, "project")
+        projects.advance_if_allowed(session, project, target)
 
 
 # --- jobs ---------------------------------------------------------------------------
@@ -248,6 +309,7 @@ async def cancel_job(session: AsyncSession, job_id: int, reason: str, user: User
     for assignment in await _active_assignments(session, [v.id for v in visits]):
         if assignment.status is not AssignmentStatus.SUBMITTED:
             _cancel_assignment(assignment, SYSTEM)
+            await _tell(session, assignment, job, NotificationType.TASK_CANCELLED)
     audit.record(
         session,
         "job.cancelled",
@@ -289,7 +351,7 @@ async def create_visit(session: AsyncSession, job_id: int, data: VisitIn, user: 
 
 async def update_visit(session: AsyncSession, visit_id: int, data: VisitIn, user: User) -> JobVisit:
     """Moves the visit and every active assignment on it (re-checks double booking)."""
-    visit, _ = await _planned_visit(session, visit_id)
+    visit, job = await _planned_visit(session, visit_id)
     period = _period(data.starts_at, data.ends_at)
     assignments = await _active_assignments(session, [visit.id])
     for assignment in assignments:
@@ -297,6 +359,7 @@ async def update_visit(session: AsyncSession, visit_id: int, data: VisitIn, user
     visit.period = period
     for assignment in assignments:
         assignment.period = period
+        await _tell(session, assignment, job, NotificationType.TASK_CHANGED)
     audit.record(
         session,
         "visit.rescheduled",
@@ -319,6 +382,7 @@ async def cancel_visit(session: AsyncSession, visit_id: int, user: User) -> None
     visit.status = VisitStatus.CANCELLED
     for assignment in assignments:
         _cancel_assignment(assignment, SYSTEM)
+        await _tell(session, assignment, job, NotificationType.TASK_CANCELLED)
     audit.record(
         session, "visit.cancelled", user_id=user.id, entity_type="visit", entity_id=visit.id
     )
@@ -364,29 +428,32 @@ async def set_crew(session: AsyncSession, visit_id: int, crew: CrewIn, user: Use
                     worker_id=worker_id,
                 )
             _cancel_assignment(assignment, user.role)
+            await _tell(session, assignment, job, NotificationType.TASK_CANCELLED)
         elif assignment.role is AssignmentRole.LEAD and member.role is AssignmentRole.MEMBER:
             assignment.role = AssignmentRole.MEMBER  # promotions happen in step 2
     await session.flush()
 
     # 2. additions, re-additions, pay
+    newly_assigned: list[VisitAssignment] = []
     for worker_id, member in wanted.items():
         await _check_not_booked(session, worker_id, visit.period, visit.id)
         current = existing.get(worker_id)
         if current is None:
-            session.add(
-                VisitAssignment(
-                    visit_id=visit.id,
-                    worker_id=worker_id,
-                    role=member.role,
-                    period=visit.period,
-                    pay_amount=member.pay_amount,
-                    assigned_by=user.id,
-                )
+            current = VisitAssignment(
+                visit_id=visit.id,
+                worker_id=worker_id,
+                role=member.role,
+                period=visit.period,
+                pay_amount=member.pay_amount,
+                assigned_by=user.id,
             )
+            session.add(current)
+            newly_assigned.append(current)
             continue
         if current.status is AssignmentStatus.CANCELLED:
             ASSIGNMENT_TRANSITIONS.check(current.status, AssignmentStatus.ASSIGNED, user.role)
             current.status = AssignmentStatus.ASSIGNED
+            newly_assigned.append(current)
             current.period = visit.period
             current.assigned_by = user.id
         current.role = member.role
@@ -408,6 +475,8 @@ async def set_crew(session: AsyncSession, visit_id: int, crew: CrewIn, user: Use
             current.pay_amount = member.pay_amount
 
     await _flush_or_booked(session)
+    for assignment in newly_assigned:
+        await _tell(session, assignment, job, NotificationType.TASK_ASSIGNED)
     await _sync_job_after_crew_change(session, job)
     audit.record(
         session,

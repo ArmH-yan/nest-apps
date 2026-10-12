@@ -1,4 +1,4 @@
-# Local development infrastructure. v1 foundation: PostgreSQL only.
+# Local development infrastructure: PostgreSQL + S3-compatible file storage.
 # Values come from the root `.env` (copy `.env.example`).
 services:
   db:
@@ -21,5 +21,20 @@ services:
       timeout: 5s
       retries: 10
 
+  # Photo/file storage (ARCHITECTURE §24). RustFS speaks the S3 API; MinIO's
+  # images are no longer published. Any S3 provider works in production.
+  storage:
+    image: rustfs/rustfs:1.0.1
+    container_name: nest-storage
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY in .env}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?set S3_SECRET_KEY in .env}
+    ports:
+      - "9000:9000"
+    volumes:
+      - nest-storage:/data
+
 volumes:
   nest-pgdata:
+  nest-storage:

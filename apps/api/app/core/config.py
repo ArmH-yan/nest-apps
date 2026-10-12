@@ -35,6 +35,20 @@ class Settings(BaseSettings):
     login_max_failures: int = 5
     login_failure_window_minutes: int = 15
 
+    # File storage (ARCHITECTURE §24), any S3-compatible service.
+    s3_endpoint_url: str = "http://localhost:9000"
+    # Host the phones use; presigned URLs are signed for it. Defaults to s3_endpoint_url.
+    s3_public_endpoint_url: str | None = None
+    s3_access_key: SecretStr = SecretStr("")
+    s3_secret_key: SecretStr = SecretStr("")
+    s3_bucket: str = "nest-files"
+    s3_region: str = "us-east-1"
+    max_upload_bytes: int = 15 * 1024 * 1024
+    # Mobile app releases below this are asked to update (/worker/config).
+    min_supported_app_version: str = "1.0.0"
+    # The NEST bot for crew chat (§26a); null until Phase 3b.
+    telegram_bot_username: str | None = None
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:

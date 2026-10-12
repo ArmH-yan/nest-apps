@@ -100,12 +100,14 @@ cd apps/manager-web && npm install && cp .env.example .env.local
 
 ```bash
 # database (repo root)
-docker compose up -d db                 # PostgreSQL 17 on localhost:5433 (+ nest_test DB)
+docker compose up -d db storage         # PostgreSQL 17 on :5433 (+ nest_test DB), S3 storage on :9000
 
 # backend (apps/api, venv at apps/api/.venv; on Bash use .venv/Scripts/<tool>)
 .venv/Scripts/uvicorn app.main:app --reload --port 8000     # http://localhost:8000/health, /docs
 .venv/Scripts/alembic upgrade head      # migrations (URL from DATABASE_URL)
 .venv/Scripts/alembic revision --autogenerate -m "..."      # new migration (review it!)
+.venv/Scripts/python scripts/tidy_migration.py alembic/versions/<new>.py   # fixes duplicate enum CHECKs from autogenerate
+.venv/Scripts/python -m app.cli init-storage   # once: creates the S3 bucket
 .venv/Scripts/ruff format . && .venv/Scripts/ruff check . && .venv/Scripts/mypy app tests alembic/env.py
 .venv/Scripts/pytest                    # uses TEST_DATABASE_URL (nest_test), migrates it to head
 .venv/Scripts/python -m app.cli create-user --phone +374... --first-name A --last-name B --role ADMIN   # prompts for the password; WORKER needs --employee-code
@@ -129,7 +131,7 @@ flutter build apk --flavor dev --debug
 These are documented in ARCHITECTURE §34 and were accepted by the user on 2026-10-07:
 
 - PostgreSQL 17, running in Docker on host port 5433.
-- Docker Compose runs only PostgreSQL. The API runs from the local venv (`apps/api/.venv`).
+- Docker Compose runs PostgreSQL and the S3 storage (RustFS). The API runs from the local venv (`apps/api/.venv`).
 - `GET /health` lives outside `/api/v1`.
 - The manager web app has no Tailwind for now.
 
@@ -151,6 +153,7 @@ Before reporting work as done, run the formatter, linter/analyzer and tests for 
   - **`sdkmanager` is deprecated here and breaks on `;` package names.** Install SDK packages with the new CLI instead: `C:\Users\armhy\AppData\Local\Android\sdk\cmdline-tools\latest\bin\android.exe --sdk=C:\Users\armhy\AppData\Local\Android\sdk sdk install ndk/<version>` (list packages with `sdk list --all`).
 - A native Windows PostgreSQL already listens on **5432**; the project's Docker PostgreSQL is mapped to host port **5433**. Don't stop or reuse the native one.
 - Docker Desktop must be running for `docker compose`.
+- In Git Bash, `docker run ... -dir=/data` gets its path rewritten to a Windows path; prefix with `MSYS_NO_PATHCONV=1`.
 - `apps/worker-mobile/android/gradle.properties` sets `kotlin.incremental=false`. The project is on `F:` and the pub cache is on `C:`, which breaks Kotlin incremental compilation of plugins on Windows. Keep the setting.
 - Emulator: AVD `Pixel_9_Pro` (Android 16, API 36). Launch it with `flutter emulators --launch Pixel_9_Pro`; if it hangs "offline", restart it with `emulator -avd Pixel_9_Pro -no-snapshot-load`.
 - Local ports:
@@ -158,7 +161,7 @@ Before reporting work as done, run the formatter, linter/analyzer and tests for 
   - manager-web: 3001
   - API: 8000 (Swagger at `/docs`)
   - Postgres (Docker): 5433 → container 5432
-  - MinIO: 9000
+  - S3 storage (RustFS, docker compose `storage`): 9000. A Dart tool from VS Code often listens on 9100; don't use that port.
   - Metabase: 3030
 
 ## Working preferences

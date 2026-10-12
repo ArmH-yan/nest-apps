@@ -12,8 +12,10 @@ from app.modules.users.service import create_user, get_worker_for_user
 
 PASSWORD = "first-pass-123"
 
-# Today 09:00-17:00 Yerevan (UTC+4), as UTC.
-DAY = datetime(2026, 10, 12, 5, 0, tzinfo=UTC)
+# 09:00 Yerevan (UTC+4) today, as UTC: "today" keeps time-based flags (LATE_SYNC)
+# and the earnings month realistic whenever the suite runs.
+_now_yerevan = datetime.now(UTC) + timedelta(hours=4)
+DAY = datetime(_now_yerevan.year, _now_yerevan.month, _now_yerevan.day, 5, 0, tzinfo=UTC)
 
 
 def at(hours: float, day: int = 0) -> datetime:

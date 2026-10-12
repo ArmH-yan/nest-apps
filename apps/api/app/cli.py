@@ -8,6 +8,8 @@
 The password is asked for interactively and never passed as an argument, so
 it does not end up in shell history. Until the manager app exists (Phase 3),
 this is how accounts are created. There is no self-registration (§7).
+
+    python -m app.cli init-storage     # once per environment: creates the S3 bucket
 """
 
 import argparse
@@ -15,8 +17,10 @@ import asyncio
 import getpass
 import sys
 
+from app.core.config import get_settings
 from app.core.errors import AppError
 from app.db.session import get_engine, get_sessionmaker
+from app.modules.files.storage import S3Storage
 from app.modules.users.models import UserLocale, UserRole
 from app.modules.users.service import create_user
 
@@ -69,9 +73,14 @@ def main() -> None:
     )
     create.add_argument("--employee-code", help="required for WORKER")
 
+    commands.add_parser("init-storage", help="create the file storage bucket (S3_BUCKET)")
+
     args = parser.parse_args()
     if args.command == "create-user":
         asyncio.run(_create_user(args, _read_password()))
+    elif args.command == "init-storage":
+        S3Storage().ensure_bucket()
+        print(f"Bucket {get_settings().s3_bucket} is ready.")
 
 
 if __name__ == "__main__":

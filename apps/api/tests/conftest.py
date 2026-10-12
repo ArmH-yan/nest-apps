@@ -44,7 +44,7 @@ def migrated_database() -> Iterator[None]:
 
 
 # Every table is emptied after each test, except reference data seeded by migrations.
-_KEEP = {"services"}
+_KEEP = {"services", "catalog_items"}
 _TABLES = [t.name for t in Base.metadata.sorted_tables if t.name not in _KEEP]
 
 

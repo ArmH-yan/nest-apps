@@ -28,12 +28,22 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U nest -d nest_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
+      # S3-compatible storage for tests/test_storage_integration.py
+      storage:
+        image: rustfs/rustfs:1.0.1
+        env:
+          RUSTFS_ACCESS_KEY: ci-access
+          RUSTFS_SECRET_KEY: ci-secret-not-a-secret
+        ports: ["9000:9000"]
     env:
       APP_ENV: test
       # required by settings but never connected to: the tests use TEST_DATABASE_URL
       DATABASE_URL: postgresql+asyncpg://nest:ci-only@localhost:5432/nest
       TEST_DATABASE_URL: postgresql+asyncpg://nest:ci-only@localhost:5432/nest_test
       JWT_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
+      S3_ENDPOINT_URL: http://localhost:9000
+      S3_ACCESS_KEY: ci-access
+      S3_SECRET_KEY: ci-secret-not-a-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
