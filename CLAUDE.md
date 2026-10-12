@@ -32,6 +32,8 @@ When a change affects the design, update these docs **in the same change**. Keep
 - **Each crew member tracks their own time.** A worker app "Task" is a `visit_assignment` (one worker × one visit). The crew LEAD also records materials and inspection checklists.
 - **Quotes and on-site materials tracking are v1.**
 - Reporting = Metabase on read-only `reporting` views.
+- **Crew chat (v1, Phase 3b, ARCHITECTURE §26a):** one group thread per job (crew + managers), stored in PostgreSQL, delivered via FCM. Server-side machine translation into each reader's locale (Google Cloud Translation behind a `Translator` interface). Managers can also read and reply through a **Telegram bot**. No WhatsApp.
+- Worker app languages: hy, ru, en, hi (Hindi), id (Indonesian).
 - **Push = Firebase Cloud Messaging** (Android; APNs for iOS via FCM). Firebase is **only** the push transport: never add Firebase Auth, Firestore, Realtime Database, Storage, App Distribution, Crashlytics/Analytics or other Firebase services. No Supabase. Notification content and read state live in PostgreSQL (ARCHITECTURE §26).
 
 ## Repository layout (see ARCHITECTURE §5)
@@ -78,7 +80,7 @@ Phase 1 (§41) is built: the worker app's full mock workflow, and backend auth/u
   - Widget tests: use `test/support/app_harness.dart`. Its `settle()` interleaves real and fake time because drift completes queries on real async time; `pumpAndSettle` never settles because of the 1 s ticker.
 - **Timers come from stored timestamps**, using an injectable `Clock`. Never use a counter as the source of truth.
 - Every write = local change + outbox item in **one drift transaction**.
-- Strings go in ARB files (hy/ru/en). Colors and text styles come only from `core/theme`.
+- Strings go in ARB files (hy/ru/en/hi/id). Colors and text styles come only from `core/theme`.
 - Never put secrets in the app. Config comes from `--dart-define` (`API_BASE_URL`, `USE_MOCKS`), with `dev`/`prod` flavors.
 
 ## Manager web conventions (apps/manager-web)

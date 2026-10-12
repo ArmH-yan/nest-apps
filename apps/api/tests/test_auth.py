@@ -16,7 +16,7 @@ from app.core.security import AccessClaims, create_access_token
 from app.modules.audit.models import AuditLog
 from app.modules.auth.dependencies import AuthContext, CurrentAuth, require_roles
 from app.modules.auth.models import RefreshToken
-from app.modules.users.models import User, UserRole
+from app.modules.users.models import User, UserLocale, UserRole
 from app.modules.users.service import create_user
 
 PASSWORD = "first-pass-123"
@@ -369,3 +369,24 @@ async def test_create_user_rules(make_user: MakeUser, session: AsyncSession) -> 
     with pytest.raises(AppError) as bad_phone:
         await make_user(phone="call me")
     assert bad_phone.value.code == "INVALID_PHONE"
+
+
+@pytest.mark.parametrize("locale", [UserLocale.HI, UserLocale.ID])
+async def test_new_locales_are_accepted(
+    client: AsyncClient, session: AsyncSession, locale: UserLocale
+) -> None:
+    await create_user(
+        session,
+        phone=PHONE,
+        password=PASSWORD,
+        first_name="Ravi",
+        last_name="Kumar",
+        role=UserRole.WORKER,
+        locale=locale,
+        must_change_password=False,
+        employee_code="NEST-101",
+    )
+
+    response = await login(client)
+
+    assert response.json()["user"]["locale"] == locale.value

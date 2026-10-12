@@ -149,6 +149,11 @@ class ProfileScreen extends ConsumerWidget {
                   const DropdownMenuItem(value: 'hy', child: Text('Հայերեն')),
                   const DropdownMenuItem(value: 'ru', child: Text('Русский')),
                   const DropdownMenuItem(value: 'en', child: Text('English')),
+                  const DropdownMenuItem(value: 'hi', child: Text('हिन्दी')),
+                  const DropdownMenuItem(
+                    value: 'id',
+                    child: Text('Bahasa Indonesia'),
+                  ),
                 ],
                 onChanged: (code) => ref
                     .read(localeProvider.notifier)

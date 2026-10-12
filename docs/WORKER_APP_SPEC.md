@@ -127,7 +127,7 @@ EmptyState · ErrorState · LoadingState · ConfirmDialog
 
 ## LOCALIZATION
 
-Languages: **Armenian (hy)**, **Russian (ru)**, **English (en)**. The default is the device language, falling back to hy.
+Languages: **Armenian (hy)**, **Russian (ru)**, **English (en)**, **Hindi (hi)**, **Indonesian (id)** (hi and id added 2026-10-12 for foreign crew members; native-speaker review of the translations is pending). The default is the device language, falling back to hy. Hindi uses Devanagari, which Android renders with its built-in Noto fonts, so no font is bundled.
 
 - All user-facing strings go in ARB files. No hard-coded strings in widgets.
 - The user can change the language in Profile.
@@ -313,6 +313,10 @@ POST /api/v1/worker/files/{uuid}/confirm
 PUT  /api/v1/worker/tasks/{taskId}/completion/{uuid}
 GET  /api/v1/worker/history?cursor=
 GET  /api/v1/worker/earnings?month=YYYY-MM    → { month, approved_tasks, approved_amount, currency }
+GET  /api/v1/worker/chats                                  (Phase 3b, §26a)
+GET  /api/v1/worker/chats/{threadId}/messages?after=&before=
+PUT  /api/v1/worker/chats/{threadId}/messages/{uuid}
+POST /api/v1/worker/chats/{threadId}/read
 GET  /api/v1/worker/notifications?cursor=
 POST /api/v1/worker/notifications/{id}/read
 PUT  /api/v1/worker/devices/{fcmToken}
@@ -620,6 +624,29 @@ Tasks that are waiting for sync or failed to sync are listed at the top with the
   - App version
   - "Unsynced items: N" with a **Sync now** button
   - **Log out** (with the unsynced-items warning)
+
+---
+
+## CREW CHAT (`/chats/:threadId`), Phase 3b
+
+The design is in ARCHITECTURE §26a. There is one group thread per **job**: the crew plus the managers. Each message is shown in the reader's language.
+
+Entry points:
+- Task details and the Work screen show a **Crew chat** button with an unread badge for that task's job.
+- A `CHAT_MESSAGE` push opens the thread directly.
+
+Screen:
+- Messages newest at the bottom, grouped by day (Yerevan time). Your own messages are on the right.
+- Each bubble shows the sender's name and role (LEAD / manager). It shows the text in your language, with a small "Translated · show original" link when it was translated.
+- The input field has a send button. Max 2000 characters. Text only in v1.
+
+Offline:
+- Sending = local `chat_messages` row + outbox item (`PUT /worker/chats/{thread}/messages/{uuid}`) in **one drift transaction**, like every other write. A message shows a clock icon until it is sent, then a check mark. A failed message gets a retry action.
+- Received messages are cached in drift, so threads open offline. The app refreshes on open, on push and on resume.
+
+Data:
+- Domain models: `ChatThread` (id, jobId, jobTitle, unreadCount, lastMessage) and `ChatMessage` (id, threadId, senderId, senderName, senderRole, text, originalText, originalLang, translated, createdAt, mine, syncState).
+- A `ChatRepository` over drift + `NestApi`, shared by mock and API mode. `MockNestApi` gets a seeded thread for `job-12`, with a manager message in Armenian that is "translated" into the worker's locale.
 
 ---
 

@@ -28,6 +28,8 @@ class UserLocale(StrEnum):
     HY = "hy"
     RU = "ru"
     EN = "en"
+    HI = "hi"
+    ID = "id"
 
 
 def _text_enum(enum: type[StrEnum], name: str) -> Enum:

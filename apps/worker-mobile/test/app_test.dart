@@ -42,8 +42,15 @@ void main() {
     await app.dispose(tester);
   });
 
-  testWidgets('Armenian and Russian translations load', (tester) async {
-    for (final (code, button) in [('hy', 'Մուտք'), ('ru', 'Войти')]) {
+  testWidgets('Armenian, Russian, Hindi and Indonesian translations load', (
+    tester,
+  ) async {
+    for (final (code, button) in [
+      ('hy', 'Մուտք'),
+      ('ru', 'Войти'),
+      ('hi', 'लॉग इन'),
+      ('id', 'Masuk'),
+    ]) {
       final app = await AppHarness.create(prefs: {'settings.locale': code});
       await app.pump(tester);
 
