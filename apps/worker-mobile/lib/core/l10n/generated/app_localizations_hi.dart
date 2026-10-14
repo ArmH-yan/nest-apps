@@ -670,6 +670,43 @@ class AppLocalizationsHi extends AppLocalizations {
   String get errorGeneric => 'कुछ गड़बड़ हुई। फिर से कोशिश करें।';
 
   @override
+  String get errTooManyAttempts =>
+      'बहुत अधिक प्रयास। कुछ मिनट रुकें और फिर से कोशिश करें।';
+
+  @override
+  String get errAccountDisabled =>
+      'आपका खाता बंद है। अपने मैनेजर से संपर्क करें।';
+
+  @override
+  String get errNotAWorker => 'यह खाता वर्कर ऐप का उपयोग नहीं कर सकता।';
+
+  @override
+  String get errWrongCurrentPassword => 'मौजूदा पासवर्ड गलत है।';
+
+  @override
+  String get errPasswordUnchanged =>
+      'नया पासवर्ड मौजूदा पासवर्ड से अलग होना चाहिए।';
+
+  @override
+  String get errStartCheckMissing =>
+      'इस काम के लिए शुरुआत की लोकेशन जाँच नहीं है।';
+
+  @override
+  String get errPhotosNotUploaded =>
+      'कुछ फ़ोटो अभी अपलोड नहीं हुईं। उन्हें फिर से भेजा जाएगा।';
+
+  @override
+  String get errTimeOverlap =>
+      'यह समय किसी दूसरे काम या ब्रेक के समय से टकराता है।';
+
+  @override
+  String get errNotCrewLead => 'सिर्फ़ टीम लीड सामग्री दर्ज कर सकता है।';
+
+  @override
+  String get errAlreadySavedDifferently =>
+      'यह सर्वर पर पहले से अलग तरह से सेव है। अपने मैनेजर से संपर्क करें।';
+
+  @override
   String get errorInvalidCredentials => 'गलत फ़ोन नंबर या पासवर्ड।';
 
   @override

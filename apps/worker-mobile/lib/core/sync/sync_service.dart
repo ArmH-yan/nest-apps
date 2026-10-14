@@ -216,25 +216,27 @@ class SyncService {
         state: PhotoUploadState.uploading,
         progress: 0,
       );
-      final url = await _api.presignPhoto(photo);
+      final target = await _api.presignPhoto(photo);
       var lastWritten = 0.0;
-      await _api.uploadPhoto(
-        url,
-        path,
-        onProgress: (p) {
-          // throttle DB writes to ~10 updates per upload
-          if (p - lastWritten >= 0.1 || p >= 1) {
-            lastWritten = p;
-            unawaited(
-              _completions.updatePhotoUpload(
-                photoId,
-                state: PhotoUploadState.uploading,
-                progress: p,
-              ),
-            );
-          }
-        },
-      );
+      if (!target.alreadyUploaded) {
+        await _api.uploadPhoto(
+          target,
+          path,
+          onProgress: (p) {
+            // throttle DB writes to ~10 updates per upload
+            if (p - lastWritten >= 0.1 || p >= 1) {
+              lastWritten = p;
+              unawaited(
+                _completions.updatePhotoUpload(
+                  photoId,
+                  state: PhotoUploadState.uploading,
+                  progress: p,
+                ),
+              );
+            }
+          },
+        );
+      }
       await _api.confirmPhoto(photoId);
       await _completions.updatePhotoUpload(
         photoId,

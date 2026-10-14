@@ -282,7 +282,14 @@ Implementations:
 
 **As built (Phase 1, 2026-10-07).** The Mock/Api switch sits one level lower than the list above. This avoids duplicating the local-storage and outbox logic in every Mock*/Api* pair:
 
-- **`NestApi`** (`lib/core/api/nest_api.dart`) is the single remote interface. `MockNestApi` is the deterministic in-memory backend with failure switches. An HTTP implementation (on `ApiClient` + DTOs) is added once the backend `/api/v1/worker/*` endpoints exist. `nestApiProvider` is the only place that reads `USE_MOCKS`.
+- **`NestApi`** (`lib/core/api/nest_api.dart`) is the single remote interface. `nestApiProvider` is the only place that reads `USE_MOCKS`:
+  - `MockNestApi`: the deterministic in-memory backend with failure switches (default).
+  - `HttpNestApi` (Phase 2c, `lib/core/api/http_nest_api.dart`): the real API. Wire DTOs live in `lib/core/api/dto/api_dtos.dart` (json_serializable, snake_case) and are mapped to domain models only inside `HttpNestApi`. Server ids are integers; the app keeps them as strings. Every timestamp is sent with `.toUtc()` (the API rejects times without a zone).
+  - **Contract test** (`test/core/api/contract_test.dart`, ARCHITECTURE §40): each DTO must have exactly the fields of its schema in the committed `apps/api/openapi.json`.
+- **`ApiClient`** sends `X-Device-Time` and `Authorization: Bearer`. On a `401` it refreshes the token once (a single refresh shared by all waiting requests) and retries. If the server rejects the refresh token, tokens are cleared and `AuthController.sessionExpired()` signs out locally; unsynced work stays. Being offline never ends the session.
+- **Photos**: `presignPhoto` returns a `PhotoUploadTarget` (URL + signed headers + `alreadyUploaded`). The bytes go straight to storage with a plain Dio (no bearer token). Any storage error is retryable; the retry presigns a fresh URL.
+- **Logout** calls `POST /auth/logout` (best effort), then clears the local session.
+- Server error codes are shown in the worker's language through `l10n.apiError(...)`, including the reasons shown for failed syncs. Codes the worker can't act on fall back to a generic message.
 - The **repositories** are concrete classes over the drift DB + `NestApi`, and are the same in mock and API mode:
   - `AuthRepository`
   - `TaskRepository`: task cache, config, catalog, expected materials

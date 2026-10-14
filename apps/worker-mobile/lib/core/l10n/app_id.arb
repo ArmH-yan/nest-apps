@@ -219,6 +219,16 @@
   "errorOfflineCached": "Anda sedang offline. Menampilkan tugas tersimpan.",
   "errorServer": "Terjadi kesalahan di server.",
   "errorGeneric": "Terjadi kesalahan. Coba lagi.",
+  "errTooManyAttempts": "Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.",
+  "errAccountDisabled": "Akun Anda dinonaktifkan. Hubungi manajer Anda.",
+  "errNotAWorker": "Akun ini tidak dapat menggunakan aplikasi pekerja.",
+  "errWrongCurrentPassword": "Kata sandi saat ini salah.",
+  "errPasswordUnchanged": "Kata sandi baru harus berbeda dari yang sekarang.",
+  "errStartCheckMissing": "Pemeriksaan lokasi awal untuk tugas ini tidak ada.",
+  "errPhotosNotUploaded": "Beberapa foto belum terunggah. Akan dikirim lagi.",
+  "errTimeOverlap": "Waktu ini bertabrakan dengan sesi kerja atau istirahat lain.",
+  "errNotCrewLead": "Hanya ketua tim yang dapat mencatat material.",
+  "errAlreadySavedDifferently": "Data ini sudah tersimpan berbeda di server. Hubungi manajer Anda.",
   "errorInvalidCredentials": "Nomor telepon atau kata sandi salah.",
   "requestId": "ID permintaan: {id}"
 }

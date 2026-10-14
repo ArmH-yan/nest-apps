@@ -230,12 +230,14 @@ class _BottomAction extends ConsumerWidget {
         onPressed: () => context.go('/work'),
       );
     } else if (status == TaskDisplayStatus.synchronizationFailed) {
-      final reason = ref.watch(syncFailureMessageProvider(view.id)).value;
+      final reason = ref.watch(syncFailureProvider(view.id)).value;
       child = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           MessageBanner(
-            message: reason ?? l10n.syncFailedBanner,
+            message: reason == null
+                ? l10n.syncFailedBanner
+                : l10n.error(reason),
             color: AppColors.error,
             icon: Icons.sync_problem,
           ),

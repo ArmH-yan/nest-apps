@@ -671,6 +671,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorGeneric => 'Something went wrong. Try again.';
 
   @override
+  String get errTooManyAttempts =>
+      'Too many attempts. Wait a few minutes and try again.';
+
+  @override
+  String get errAccountDisabled =>
+      'Your account is disabled. Contact your manager.';
+
+  @override
+  String get errNotAWorker => 'This account can\'t use the worker app.';
+
+  @override
+  String get errWrongCurrentPassword => 'The current password is wrong.';
+
+  @override
+  String get errPasswordUnchanged =>
+      'The new password must be different from the current one.';
+
+  @override
+  String get errStartCheckMissing =>
+      'The start location check is missing for this task.';
+
+  @override
+  String get errPhotosNotUploaded =>
+      'Some photos have not been uploaded yet. They will be sent again.';
+
+  @override
+  String get errTimeOverlap =>
+      'This time overlaps another work or break session.';
+
+  @override
+  String get errNotCrewLead => 'Only the crew lead can record materials.';
+
+  @override
+  String get errAlreadySavedDifferently =>
+      'This was already saved differently on the server. Contact your manager.';
+
+  @override
   String get errorInvalidCredentials => 'Wrong phone number or password.';
 
   @override

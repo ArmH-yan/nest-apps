@@ -1868,6 +1868,8 @@ FastAPI ──► openapi.json ──┬──► openapi-typescript ──► m
 
 Domain models in the Flutter app are kept separate from DTOs. Mappers sit between them.
 
+As built (2026-10-14): the contract is committed as `apps/api/openapi.json` (`python -m app.cli export-openapi`). `tests/test_openapi.py` fails when it is stale, and the worker app's `test/core/api/contract_test.dart` fails when a DTO's fields differ from its schema. Both run in CI.
+
 ---
 
 # 41. Recommended Development Order
@@ -1885,7 +1887,7 @@ Status (2026-10-08): built. Users/workers/refresh tokens/audit logs (migration `
 
 ## Phase 2 — Scheduling core + worker API
 
-Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. **2b done (2026-10-12)**: the `/worker/*` API (§18 "As built"), photo storage, notifications, migration `0005`. Next: 2c Flutter HTTP client, 2d seed script + field test.
+Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. **2b done (2026-10-12)**: the `/worker/*` API (§18 "As built"), photo storage, notifications, migration `0005`. **2c done (2026-10-14)**: the worker app's `HttpNestApi` (`USE_MOCKS=false`), token refresh, contract test (§40). Next: 2d seed script + field test.
 
 ```text
 Companies, contacts, sites (pin + radius), projects, jobs, visits, crew assignment, constraints

@@ -675,6 +675,44 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorGeneric => 'Что-то пошло не так. Попробуйте снова.';
 
   @override
+  String get errTooManyAttempts =>
+      'Слишком много попыток. Подождите несколько минут и попробуйте снова.';
+
+  @override
+  String get errAccountDisabled =>
+      'Ваша учётная запись отключена. Обратитесь к менеджеру.';
+
+  @override
+  String get errNotAWorker =>
+      'Эта учётная запись не может использовать приложение для работников.';
+
+  @override
+  String get errWrongCurrentPassword => 'Текущий пароль неверный.';
+
+  @override
+  String get errPasswordUnchanged =>
+      'Новый пароль должен отличаться от текущего.';
+
+  @override
+  String get errStartCheckMissing =>
+      'Для этой задачи нет проверки местоположения при старте.';
+
+  @override
+  String get errPhotosNotUploaded =>
+      'Некоторые фото ещё не загружены. Они будут отправлены снова.';
+
+  @override
+  String get errTimeOverlap =>
+      'Это время пересекается с другой сменой или перерывом.';
+
+  @override
+  String get errNotCrewLead => 'Только бригадир может записывать материалы.';
+
+  @override
+  String get errAlreadySavedDifferently =>
+      'На сервере это уже сохранено иначе. Обратитесь к менеджеру.';
+
+  @override
   String get errorInvalidCredentials => 'Неверный номер телефона или пароль.';
 
   @override

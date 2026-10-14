@@ -152,7 +152,7 @@ class HistoryDetailScreen extends ConsumerWidget {
     final completionCheck = checks
         .where((x) => x.id == c.completionLocationCheckId)
         .firstOrNull;
-    final reason = ref.watch(syncFailureMessageProvider(taskId)).value;
+    final reason = ref.watch(syncFailureProvider(taskId)).value;
 
     return Scaffold(
       appBar: AppBar(title: Text(task.title)),
@@ -166,7 +166,9 @@ class HistoryDetailScreen extends ConsumerWidget {
           if (view.status == TaskDisplayStatus.synchronizationFailed) ...[
             const SizedBox(height: 12),
             MessageBanner(
-              message: reason ?? l10n.syncFailedBanner,
+              message: reason == null
+                  ? l10n.syncFailedBanner
+                  : l10n.error(reason),
               color: AppColors.error,
               icon: Icons.sync_problem,
             ),

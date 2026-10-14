@@ -10,12 +10,15 @@ it does not end up in shell history. Until the manager app exists (Phase 3),
 this is how accounts are created. There is no self-registration (§7).
 
     python -m app.cli init-storage     # once per environment: creates the S3 bucket
+    python -m app.cli export-openapi   # after API changes: updates apps/api/openapi.json
 """
 
 import argparse
 import asyncio
 import getpass
+import json
 import sys
+from pathlib import Path
 
 from app.core.config import get_settings
 from app.core.errors import AppError
@@ -23,6 +26,17 @@ from app.db.session import get_engine, get_sessionmaker
 from app.modules.files.storage import S3Storage
 from app.modules.users.models import UserLocale, UserRole
 from app.modules.users.service import create_user
+
+# The API contract (ARCHITECTURE §40), committed so the worker app's contract test
+# and reviewers can see API changes. tests/test_openapi.py fails when it is stale.
+OPENAPI_PATH = Path(__file__).resolve().parents[1] / "openapi.json"
+
+
+def openapi_json() -> str:
+    from app.main import create_app
+
+    spec = create_app().openapi()
+    return json.dumps(spec, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
 
 
 def _read_password() -> str:
@@ -74,6 +88,9 @@ def main() -> None:
     create.add_argument("--employee-code", help="required for WORKER")
 
     commands.add_parser("init-storage", help="create the file storage bucket (S3_BUCKET)")
+    commands.add_parser(
+        "export-openapi", help=f"write the API contract to {OPENAPI_PATH.name} (§40)"
+    )
 
     args = parser.parse_args()
     if args.command == "create-user":
@@ -81,6 +98,9 @@ def main() -> None:
     elif args.command == "init-storage":
         S3Storage().ensure_bucket()
         print(f"Bucket {get_settings().s3_bucket} is ready.")
+    elif args.command == "export-openapi":
+        OPENAPI_PATH.write_text(openapi_json(), encoding="utf-8")
+        print(f"Wrote {OPENAPI_PATH}")
 
 
 if __name__ == "__main__":

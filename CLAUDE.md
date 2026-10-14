@@ -76,7 +76,7 @@ Phase 1 (§41) is built: the worker app's full mock workflow, and backend auth/u
 
 - Feature-based layout: `data / domain / presentation`. Use Riverpod, GoRouter, Dio, freezed/json_serializable, drift (local DB + outbox) and flutter_secure_storage (tokens).
 - UI never calls HTTP, GPS or storage directly. Go through repository/service interfaces.
-  - The Mock/Api switch is the `NestApi` interface (`MockNestApi` now, HTTP later), chosen only in `nestApiProvider` from `USE_MOCKS`. Repositories are shared by both modes (see WORKER_APP_SPEC "As built").
+  - The Mock/Api switch is the `NestApi` interface (`MockNestApi` / `HttpNestApi`), chosen only in `nestApiProvider` from `USE_MOCKS`. Repositories are shared by both modes (see WORKER_APP_SPEC "As built"). DTOs in `lib/core/api/dto/` must match `apps/api/openapi.json` (contract test).
   - Widget tests: use `test/support/app_harness.dart`. Its `settle()` interleaves real and fake time because drift completes queries on real async time; `pumpAndSettle` never settles because of the 1 s ticker.
 - **Timers come from stored timestamps**, using an injectable `Clock`. Never use a counter as the source of truth.
 - Every write = local change + outbox item in **one drift transaction**.
@@ -108,6 +108,7 @@ docker compose up -d db storage         # PostgreSQL 17 on :5433 (+ nest_test DB
 .venv/Scripts/alembic revision --autogenerate -m "..."      # new migration (review it!)
 .venv/Scripts/python scripts/tidy_migration.py alembic/versions/<new>.py   # fixes duplicate enum CHECKs from autogenerate
 .venv/Scripts/python -m app.cli init-storage   # once: creates the S3 bucket
+.venv/Scripts/python -m app.cli export-openapi # after any API change: updates apps/api/openapi.json (contract, §40)
 .venv/Scripts/ruff format . && .venv/Scripts/ruff check . && .venv/Scripts/mypy app tests alembic/env.py
 .venv/Scripts/pytest                    # uses TEST_DATABASE_URL (nest_test), migrates it to head
 .venv/Scripts/python -m app.cli create-user --phone +374... --first-name A --last-name B --role ADMIN   # prompts for the password; WORKER needs --employee-code
@@ -120,7 +121,7 @@ npm run gen:api                         # regenerate src/lib/api/schema.d.ts (AP
 # worker app (apps/worker-mobile; in Git Bash first: export PATH="/f/flutter/flutter-sdk/bin:$PATH")
 dart run build_runner build --delete-conflicting-outputs   # after changing freezed/json/drift code
 flutter gen-l10n                        # after changing ARB files
-dart format lib test && flutter analyze && flutter test
+dart format lib test && flutter analyze && flutter test   # add `-j 1` when RAM is low
 flutter run --flavor dev                # mocks by default (USE_MOCKS=true)
 flutter run --flavor dev --dart-define=USE_MOCKS=false --dart-define=API_BASE_URL=http://10.0.2.2:8000
 flutter build apk --flavor dev --debug

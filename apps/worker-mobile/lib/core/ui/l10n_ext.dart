@@ -69,8 +69,7 @@ extension StatusLabels on AppLocalizations {
   String error(Object e) {
     if (e is ApiException) {
       if (e.statusCode == null) return errorNoInternet;
-      if (e.code == 'INVALID_CREDENTIALS') return errorInvalidCredentials;
-      if (e.code == 'TASK_CANCELLED') return errCancelled;
+      if (apiError(e) case final message?) return message;
       if (e.statusCode! >= 500) return errorServer;
       return e.message.isNotEmpty ? e.message : errorGeneric;
     }
@@ -78,6 +77,32 @@ extension StatusLabels on AppLocalizations {
     if (e is LocationException) return locationFailure(e.failure);
     return errorGeneric;
   }
+
+  /// Localized text for the server's stable error codes (ARCHITECTURE §18, §32).
+  /// null → not a code the worker can act on; callers fall back.
+  String? apiError(ApiException e) => switch (e.code) {
+    'INVALID_CREDENTIALS' when e.statusCode == 400 => errWrongCurrentPassword,
+    'INVALID_CREDENTIALS' => errorInvalidCredentials,
+    'TOO_MANY_LOGIN_ATTEMPTS' => errTooManyAttempts,
+    'ACCOUNT_DISABLED' => errAccountDisabled,
+    'NOT_A_WORKER' => errNotAWorker,
+    'PASSWORD_UNCHANGED' => errPasswordUnchanged,
+    'TASK_CANCELLED' => errCancelled,
+    'TASK_ALREADY_SUBMITTED' => errAlreadyCompleted,
+    'START_CHECK_MISSING' => errStartCheckMissing,
+    'PHOTOS_NOT_UPLOADED' => errPhotosNotUploaded,
+    'NOT_ENOUGH_PHOTOS' => photosRequired(
+      (e.details['required'] as num?)?.toInt() ?? 1,
+    ),
+    'MATERIALS_REQUIRED' => materialsRequired,
+    'NOT_CREW_LEAD' => errNotCrewLead,
+    'TIME_ENTRY_OVERLAP' => errTimeOverlap,
+    'TIME_ENTRY_FINALIZED' ||
+    'LOCATION_CHECK_FINALIZED' ||
+    'MATERIAL_FINALIZED' => errAlreadySavedDifferently,
+    'NOT_FOUND' => taskNotFound,
+    _ => null,
+  };
 
   /// "7h 15m"
   String hoursMinutesOf(Duration d) =>

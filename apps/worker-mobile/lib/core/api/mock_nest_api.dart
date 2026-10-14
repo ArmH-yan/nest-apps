@@ -110,6 +110,9 @@ class MockNestApi implements NestApi {
   }
 
   @override
+  Future<void> logout() async {}
+
+  @override
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -202,15 +205,18 @@ class MockNestApi implements NestApi {
   }
 
   @override
-  Future<Uri> presignPhoto(TaskPhoto photo) async {
+  Future<PhotoUploadTarget> presignPhoto(TaskPhoto photo) async {
     await _call();
     _task(photo.taskId);
-    return Uri.parse('https://storage.mock/upload/${photo.id}');
+    return PhotoUploadTarget(
+      url: Uri.parse('https://storage.mock/upload/${photo.id}'),
+      alreadyUploaded: confirmedPhotos.contains(photo.id),
+    );
   }
 
   @override
   Future<void> uploadPhoto(
-    Uri uploadUrl,
+    PhotoUploadTarget target,
     String localPath, {
     void Function(double progress)? onProgress,
   }) async {

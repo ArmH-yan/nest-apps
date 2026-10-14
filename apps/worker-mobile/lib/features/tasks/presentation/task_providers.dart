@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/mappers.dart';
@@ -155,10 +156,17 @@ final materialsProvider = StreamProvider.family<List<MaterialEntry>, String>(
       ref.watch(completionRepositoryProvider).watchMaterials(taskId),
 );
 
-/// Server reason for a task's failed sync items, if any.
-final syncFailureMessageProvider = StreamProvider.family<String?, String>(
-  (ref, taskId) => ref
-      .watch(outboxProvider)
-      .watchFailedForTask(taskId)
-      .map((rows) => rows.isEmpty ? null : rows.first.lastErrorMessage),
+/// Why a task's sync failed (the server's error code and message), if it did.
+/// Shown through `l10n.error(...)`, so workers read it in their language.
+final syncFailureProvider = StreamProvider.family<ApiException?, String>(
+  (ref, taskId) =>
+      ref.watch(outboxProvider).watchFailedForTask(taskId).map((rows) {
+        if (rows.isEmpty) return null;
+        final row = rows.first;
+        return ApiException(
+          code: row.lastErrorCode ?? ApiException.unknownError,
+          message: row.lastErrorMessage ?? '',
+          statusCode: 409,
+        );
+      }),
 );

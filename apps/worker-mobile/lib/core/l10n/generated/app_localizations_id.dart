@@ -670,6 +670,44 @@ class AppLocalizationsId extends AppLocalizations {
   String get errorGeneric => 'Terjadi kesalahan. Coba lagi.';
 
   @override
+  String get errTooManyAttempts =>
+      'Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.';
+
+  @override
+  String get errAccountDisabled =>
+      'Akun Anda dinonaktifkan. Hubungi manajer Anda.';
+
+  @override
+  String get errNotAWorker =>
+      'Akun ini tidak dapat menggunakan aplikasi pekerja.';
+
+  @override
+  String get errWrongCurrentPassword => 'Kata sandi saat ini salah.';
+
+  @override
+  String get errPasswordUnchanged =>
+      'Kata sandi baru harus berbeda dari yang sekarang.';
+
+  @override
+  String get errStartCheckMissing =>
+      'Pemeriksaan lokasi awal untuk tugas ini tidak ada.';
+
+  @override
+  String get errPhotosNotUploaded =>
+      'Beberapa foto belum terunggah. Akan dikirim lagi.';
+
+  @override
+  String get errTimeOverlap =>
+      'Waktu ini bertabrakan dengan sesi kerja atau istirahat lain.';
+
+  @override
+  String get errNotCrewLead => 'Hanya ketua tim yang dapat mencatat material.';
+
+  @override
+  String get errAlreadySavedDifferently =>
+      'Data ini sudah tersimpan berbeda di server. Hubungi manajer Anda.';
+
+  @override
   String get errorInvalidCredentials => 'Nomor telepon atau kata sandi salah.';
 
   @override

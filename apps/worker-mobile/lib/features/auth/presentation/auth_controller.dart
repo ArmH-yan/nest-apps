@@ -43,6 +43,15 @@ class AuthController extends AsyncNotifier<Worker?> {
     state = const AsyncData(null);
   }
 
+  /// The server rejected the refresh token (ApiClient already cleared it).
+  /// Sign out locally only; unsynced work stays on the phone.
+  Future<void> sessionExpired() async {
+    if (state.value == null) return;
+    ref.read(syncServiceProvider).pause();
+    await ref.read(authRepositoryProvider).clearLocalSession();
+    state = const AsyncData(null);
+  }
+
   Future<void> _afterSignIn() async {
     if (ref.read(appConfigProvider).useMocks) {
       await MockSeeder.seedIfEmpty(

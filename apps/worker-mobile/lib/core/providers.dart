@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/auth/data/auth_repository.dart';
+import '../features/auth/presentation/auth_controller.dart';
 import '../features/completion/data/completion_repository.dart';
 import '../features/completion/data/completion_service.dart';
 import '../features/earnings/data/earnings_repository.dart';
@@ -11,6 +12,7 @@ import '../features/profile/data/settings_repository.dart';
 import '../features/tasks/data/task_repository.dart';
 import '../features/work/data/work_actions.dart';
 import '../features/work/data/work_session_repository.dart';
+import 'api/http_nest_api.dart';
 import 'api/mock_nest_api.dart';
 import 'api/nest_api.dart';
 import 'config/app_config.dart';
@@ -43,6 +45,10 @@ final apiClientProvider = Provider<ApiClient>(
   (ref) => ApiClient(
     baseUrl: ref.watch(appConfigProvider).apiBaseUrl,
     clock: ref.watch(clockProvider),
+    tokens: ref.watch(tokenStorageProvider),
+    // Read lazily: the auth controller itself depends on the API.
+    onSessionExpired: () =>
+        ref.read(authControllerProvider.notifier).sessionExpired(),
   ),
 );
 
@@ -67,11 +73,7 @@ final nestApiProvider = Provider<NestApi>((ref) {
       scenario: ref.watch(mockApiScenarioProvider),
     );
   }
-  // The HTTP implementation (ApiClient + DTOs) is added once the backend's
-  // /api/v1/worker endpoints exist (ARCHITECTURE §41, Phase 2).
-  throw UnsupportedError(
-    'USE_MOCKS=false is not supported yet: the worker API is not built.',
-  );
+  return HttpNestApi(ref.watch(apiClientProvider));
 });
 
 final outboxProvider = Provider<Outbox>(

@@ -1304,6 +1304,66 @@ abstract class AppLocalizations {
   /// **'Something went wrong. Try again.'**
   String get errorGeneric;
 
+  /// No description provided for @errTooManyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a few minutes and try again.'**
+  String get errTooManyAttempts;
+
+  /// No description provided for @errAccountDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is disabled. Contact your manager.'**
+  String get errAccountDisabled;
+
+  /// No description provided for @errNotAWorker.
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t use the worker app.'**
+  String get errNotAWorker;
+
+  /// No description provided for @errWrongCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'The current password is wrong.'**
+  String get errWrongCurrentPassword;
+
+  /// No description provided for @errPasswordUnchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The new password must be different from the current one.'**
+  String get errPasswordUnchanged;
+
+  /// No description provided for @errStartCheckMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The start location check is missing for this task.'**
+  String get errStartCheckMissing;
+
+  /// No description provided for @errPhotosNotUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Some photos have not been uploaded yet. They will be sent again.'**
+  String get errPhotosNotUploaded;
+
+  /// No description provided for @errTimeOverlap.
+  ///
+  /// In en, this message translates to:
+  /// **'This time overlaps another work or break session.'**
+  String get errTimeOverlap;
+
+  /// No description provided for @errNotCrewLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the crew lead can record materials.'**
+  String get errNotCrewLead;
+
+  /// No description provided for @errAlreadySavedDifferently.
+  ///
+  /// In en, this message translates to:
+  /// **'This was already saved differently on the server. Contact your manager.'**
+  String get errAlreadySavedDifferently;
+
   /// No description provided for @errorInvalidCredentials.
   ///
   /// In en, this message translates to:

@@ -73,6 +73,16 @@ class AuthRepository {
   /// Signs out. Unsynced local data is kept on the device on purpose
   /// (WORKER_APP_SPEC "Authentication"). Pay figures are not.
   Future<void> logout() async {
+    try {
+      await _api.logout(); // revoke server-side while the token still works
+    } on Object {
+      // offline or already expired: signing out locally is what matters
+    }
+    await clearLocalSession();
+  }
+
+  /// Forgets the session on this phone (tokens, profile, pay figures).
+  Future<void> clearLocalSession() async {
     await _tokens.clear();
     await _prefs.remove(_workerKey);
     await _prefs.remove(EarningsRepository.cacheKey);

@@ -675,6 +675,45 @@ class AppLocalizationsHy extends AppLocalizations {
   String get errorGeneric => 'Ինչ-որ բան սխալ գնաց։ Կրկին փորձեք։';
 
   @override
+  String get errTooManyAttempts =>
+      'Չափազանց շատ փորձեր։ Սպասեք մի քանի րոպե և նորից փորձեք։';
+
+  @override
+  String get errAccountDisabled =>
+      'Ձեր հաշիվն անջատված է։ Կապվեք ձեր մենեջերի հետ։';
+
+  @override
+  String get errNotAWorker =>
+      'Այս հաշիվը չի կարող օգտագործել աշխատողի հավելվածը։';
+
+  @override
+  String get errWrongCurrentPassword => 'Ընթացիկ գաղտնաբառը սխալ է։';
+
+  @override
+  String get errPasswordUnchanged =>
+      'Նոր գաղտնաբառը պետք է տարբերվի ընթացիկից։';
+
+  @override
+  String get errStartCheckMissing =>
+      'Այս առաջադրանքի համար բացակայում է մեկնարկի վայրի ստուգումը։';
+
+  @override
+  String get errPhotosNotUploaded =>
+      'Որոշ լուսանկարներ դեռ վերբեռնված չեն։ Դրանք կրկին կուղարկվեն։';
+
+  @override
+  String get errTimeOverlap =>
+      'Այս ժամանակը համընկնում է մեկ այլ աշխատանքի կամ ընդմիջման հետ։';
+
+  @override
+  String get errNotCrewLead =>
+      'Միայն բրիգադի ղեկավարը կարող է գրանցել նյութերը։';
+
+  @override
+  String get errAlreadySavedDifferently =>
+      'Սերվերում սա արդեն այլ կերպ է պահպանված։ Կապվեք ձեր մենեջերի հետ։';
+
+  @override
   String get errorInvalidCredentials => 'Սխալ հեռախոսահամար կամ գաղտնաբառ։';
 
   @override

@@ -17,6 +17,10 @@ import '../../features/work/domain/time_entry.dart';
 abstract interface class NestApi {
   Future<LoginResult> login({required String phone, required String password});
 
+  /// Revokes the session on the server. Best effort: callers ignore failures
+  /// (e.g. offline), the local sign-out happens anyway.
+  Future<void> logout();
+
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -40,10 +44,10 @@ abstract interface class NestApi {
   Future<void> putMaterial(MaterialEntry material);
 
   /// Step 1–3 of a photo upload: presign → PUT bytes → confirm.
-  Future<Uri> presignPhoto(TaskPhoto photo);
+  Future<PhotoUploadTarget> presignPhoto(TaskPhoto photo);
 
   Future<void> uploadPhoto(
-    Uri uploadUrl,
+    PhotoUploadTarget target,
     String localPath, {
     void Function(double progress)? onProgress,
   });
@@ -70,4 +74,21 @@ class LoginResult {
   final String accessToken;
   final String refreshToken;
   final Worker worker;
+}
+
+/// Where to PUT a photo's bytes (a presigned storage URL).
+class PhotoUploadTarget {
+  const PhotoUploadTarget({
+    required this.url,
+    this.headers = const {},
+    this.alreadyUploaded = false,
+  });
+
+  final Uri url;
+
+  /// Must be sent with the PUT (they are part of the signature).
+  final Map<String, String> headers;
+
+  /// The server already has the file (a replay): skip the PUT, just confirm.
+  final bool alreadyUploaded;
 }
