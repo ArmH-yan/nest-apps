@@ -11,6 +11,7 @@ this is how accounts are created. There is no self-registration (§7).
 
     python -m app.cli init-storage     # once per environment: creates the S3 bucket
     python -m app.cli export-openapi   # after API changes: updates apps/api/openapi.json
+    python -m app.cli seed-demo [--reset]   # demo data (development only)
 """
 
 import argparse
@@ -72,6 +73,19 @@ async def _create_user(args: argparse.Namespace, password: str) -> None:
         await get_engine().dispose()
 
 
+async def _seed(*, reset: bool) -> None:
+    from app.seed import SeedRefused, seed_demo
+
+    try:
+        async with get_sessionmaker()() as session:
+            for line in await seed_demo(session, reset=reset):
+                print(line)
+    except SeedRefused as exc:
+        sys.exit(str(exc))
+    finally:
+        await get_engine().dispose()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -88,6 +102,8 @@ def main() -> None:
     create.add_argument("--employee-code", help="required for WORKER")
 
     commands.add_parser("init-storage", help="create the file storage bucket (S3_BUCKET)")
+    seed = commands.add_parser("seed-demo", help="demo data for development (never production)")
+    seed.add_argument("--reset", action="store_true", help="wipe ALL data first")
     commands.add_parser(
         "export-openapi", help=f"write the API contract to {OPENAPI_PATH.name} (§40)"
     )
@@ -98,6 +114,8 @@ def main() -> None:
     elif args.command == "init-storage":
         S3Storage().ensure_bucket()
         print(f"Bucket {get_settings().s3_bucket} is ready.")
+    elif args.command == "seed-demo":
+        asyncio.run(_seed(reset=args.reset))
     elif args.command == "export-openapi":
         OPENAPI_PATH.write_text(openapi_json(), encoding="utf-8")
         print(f"Wrote {OPENAPI_PATH}")

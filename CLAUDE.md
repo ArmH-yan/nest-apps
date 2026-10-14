@@ -46,7 +46,7 @@ infrastructure/       Caddy, prod compose, backups
 docs/
 ```
 
-Phase 1 (§41) is built: the worker app's full mock workflow, and backend auth/users/audit + CI (`.github/workflows/ci.yml`). Scheduling and the `/worker/*` API are Phase 2. The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
+Phase 1 (§41) is built. Phase 2: scheduling core, the `/worker/*` API and the app's `HttpNestApi` are built; the on-device/field test is pending (§41 status). The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
 
 ## Related repo: public website
 
@@ -109,6 +109,7 @@ docker compose up -d db storage         # PostgreSQL 17 on :5433 (+ nest_test DB
 .venv/Scripts/python scripts/tidy_migration.py alembic/versions/<new>.py   # fixes duplicate enum CHECKs from autogenerate
 .venv/Scripts/python -m app.cli init-storage   # once: creates the S3 bucket
 .venv/Scripts/python -m app.cli export-openapi # after any API change: updates apps/api/openapi.json (contract, §40)
+.venv/Scripts/python -m app.cli seed-demo --reset   # demo data (dev only); everyone's password: nest1234
 .venv/Scripts/ruff format . && .venv/Scripts/ruff check . && .venv/Scripts/mypy app tests alembic/env.py
 .venv/Scripts/pytest                    # uses TEST_DATABASE_URL (nest_test), migrates it to head
 .venv/Scripts/python -m app.cli create-user --phone +374... --first-name A --last-name B --role ADMIN   # prompts for the password; WORKER needs --employee-code
@@ -156,6 +157,7 @@ Before reporting work as done, run the formatter, linter/analyzer and tests for 
 - Docker Desktop must be running for `docker compose`.
 - In Git Bash, `docker run ... -dir=/data` gets its path rewritten to a Windows path; prefix with `MSYS_NO_PATHCONV=1`.
 - `apps/worker-mobile/android/gradle.properties` sets `kotlin.incremental=false`. The project is on `F:` and the pub cache is on `C:`, which breaks Kotlin incremental compilation of plugins on Windows. Keep the setting.
+- Memory: Android builds + the emulator need several GB free. `gradle.properties` asks for `-Xmx8G`; when RAM is short, build with `./gradlew assembleDevDebug --no-daemon "-Dorg.gradle.jvmargs=-Xmx2g" -Pkotlin.compiler.execution.strategy=in-process` (JAVA_HOME = Android Studio's `jbr`).
 - Emulator: AVD `Pixel_9_Pro` (Android 16, API 36). Launch it with `flutter emulators --launch Pixel_9_Pro`; if it hangs "offline", restart it with `emulator -avd Pixel_9_Pro -no-snapshot-load`.
 - Local ports:
   - nest_web: 3000

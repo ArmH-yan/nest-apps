@@ -1745,7 +1745,8 @@ Development decisions (accepted 2026-10-07):
 
 - **Worker app**: `flutter run --flavor dev` runs against mock repositories (`USE_MOCKS` defaults to `true`). Against the local API: `flutter run --flavor dev --dart-define=USE_MOCKS=false --dart-define=API_BASE_URL=http://10.0.2.2:8000` (Android emulator → host).
 - **Public website**: runs from its own repo (`F:\nest_web`, `npm run dev` → `localhost:3000`). Point `CONTACT_API_URL` at `http://localhost:8000/api/v1/public/assessment-requests`.
-- **Seed data**: a script creates a few sites in Yerevan with pins, workers, and today's visits, so the app's GPS flow can be tested with emulator mock locations.
+- **Seed data**: `python -m app.cli seed-demo [--reset]` (refused in production) creates the mock world for real: a manager and six workers (hy, ru, hi, id; password `nest1234`), five sites in Yerevan with pins, today's installation (Building A 09:00–13:30) and dismantling (Building E 14:00–18:00, with 300 m² net + 40 anchors on site), upcoming tasks, and two approved past tasks for history and earnings. Test it in the emulator with `adb emu geo fix 44.4930 40.2262` (Building A).
+- **Live check of the app's HTTP client** (no emulator): `LIVE_API_URL=http://127.0.0.1:8000 flutter test test/live` runs the whole worker flow through `HttpNestApi` against a seeded API started with `S3_PUBLIC_ENDPOINT_URL=http://127.0.0.1:9000`.
 
 ---
 
@@ -1887,7 +1888,7 @@ Status (2026-10-08): built. Users/workers/refresh tokens/audit logs (migration `
 
 ## Phase 2 — Scheduling core + worker API
 
-Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. **2b done (2026-10-12)**: the `/worker/*` API (§18 "As built"), photo storage, notifications, migration `0005`. **2c done (2026-10-14)**: the worker app's `HttpNestApi` (`USE_MOCKS=false`), token refresh, contract test (§40). Next: 2d seed script + field test.
+Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. **2b done (2026-10-12)**: the `/worker/*` API (§18 "As built"), photo storage, notifications, migration `0005`. **2c done (2026-10-14)**: the worker app's `HttpNestApi` (`USE_MOCKS=false`), token refresh, contract test (§40). **2d in progress**: seed script done (§34); pending: the on-device run against the real API and the field test with 1–2 workers.
 
 ```text
 Companies, contacts, sites (pin + radius), projects, jobs, visits, crew assignment, constraints
