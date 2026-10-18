@@ -1888,7 +1888,7 @@ Status (2026-10-08): built. Users/workers/refresh tokens/audit logs (migration `
 
 ## Phase 2 — Scheduling core + worker API
 
-Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. **2b done (2026-10-12)**: the `/worker/*` API (§18 "As built"), photo storage, notifications, migration `0005`. **2c done (2026-10-14)**: the worker app's `HttpNestApi` (`USE_MOCKS=false`), token refresh, contract test (§40). **2d in progress**: seed script done (§34); pending: the on-device run against the real API and the field test with 1–2 workers.
+Status: **2a done (2026-10-12)**: companies, contacts, sites, settings, services, projects, jobs, visits, crew assignment with pay, transition tables (`app/core/transitions.py` + one table per lifecycle, tested edge by edge), manager endpoints, migration `0004`. **2b done (2026-10-12)**: the `/worker/*` API (§18 "As built"), photo storage, notifications, migration `0005`. **2c done (2026-10-14)**: the worker app's `HttpNestApi` (`USE_MOCKS=false`), token refresh, contract test (§40). **2d (2026-10-18)**: seed script (§34); live `HttpNestApi` test passes; on-device run on the emulator against the real API passed end to end (login → tasks → GPS → work/break → materials → camera photo → submit; server recomputed totals, no flags). **Remaining for Phase 2: the field test with 1–2 workers on real phones** (needs the API reachable from the phones: deploy, or LAN IP + `S3_PUBLIC_ENDPOINT_URL`).
 
 ```text
 Companies, contacts, sites (pin + radius), projects, jobs, visits, crew assignment, constraints

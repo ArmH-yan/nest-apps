@@ -46,7 +46,7 @@ infrastructure/       Caddy, prod compose, backups
 docs/
 ```
 
-Phase 1 (§41) is built. Phase 2: scheduling core, the `/worker/*` API and the app's `HttpNestApi` are built; the on-device/field test is pending (§41 status). The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
+Phase 1 (§41) is built. Phase 2: scheduling core, the `/worker/*` API and the app's `HttpNestApi` are built and verified on the emulator against the real API; only the field test with real workers is pending (§41 status). The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
 
 ## Related repo: public website
 
@@ -158,6 +158,7 @@ Before reporting work as done, run the formatter, linter/analyzer and tests for 
 - In Git Bash, `docker run ... -dir=/data` gets its path rewritten to a Windows path; prefix with `MSYS_NO_PATHCONV=1`.
 - `apps/worker-mobile/android/gradle.properties` sets `kotlin.incremental=false`. The project is on `F:` and the pub cache is on `C:`, which breaks Kotlin incremental compilation of plugins on Windows. Keep the setting.
 - Memory: Android builds + the emulator need several GB free. `gradle.properties` asks for `-Xmx8G`; when RAM is short, build with `./gradlew assembleDevDebug --no-daemon "-Dorg.gradle.jvmargs=-Xmx2g" -Pkotlin.compiler.execution.strategy=in-process` (JAVA_HOME = Android Studio's `jbr`).
+- The emulator has device location off: in the dev build use Profile → Developer → GPS source `mockAtSite` (the server still recomputes the distance). Android also offers Google "Location Accuracy": decline it.
 - Emulator: AVD `Pixel_9_Pro` (Android 16, API 36). Launch it with `flutter emulators --launch Pixel_9_Pro`; if it hangs "offline", restart it with `emulator -avd Pixel_9_Pro -no-snapshot-load`.
 - Local ports:
   - nest_web: 3000

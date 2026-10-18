@@ -195,8 +195,17 @@ void main() {
       final earnings = await api.earnings(year: now.year, month: now.month);
       expect(earnings.currency, 'AMD');
 
+      // Logout revokes the refresh tokens (§7); the short-lived access token
+      // simply expires. Simulate that expiry: the refresh must now be refused.
       await api.logout();
+      await tokens.write(
+        StoredTokens(
+          accessToken: 'expired',
+          refreshToken: tokens.tokens!.refreshToken,
+        ),
+      );
       await expectLater(api.me(), throwsA(isA<ApiException>()));
+      expect(tokens.tokens, isNull, reason: 'rejected refresh clears tokens');
       await dir.delete(recursive: true);
     },
     skip: baseUrl == null
