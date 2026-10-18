@@ -295,7 +295,7 @@ Passwords are never stored as plaintext.
 - The access token is an HS256 JWT signed with `JWT_SECRET` (required setting). It carries `sub`, `role` and `fid`, the refresh-token family. Refresh tokens are random strings, stored as SHA-256 hashes. Each refresh rotates the token, and reusing a rotated token revokes the family (`REFRESH_TOKEN_REUSED`).
 - While `must_change_password` is set, only `/me`, `/auth/change-password` and `/auth/logout` work; everything else returns `403 PASSWORD_CHANGE_REQUIRED`. Changing the password signs out all other sessions. Logout revokes all of the user's refresh tokens.
 - Login rate limit: after 5 failed attempts for the same phone/email within 15 minutes, the API returns `429 TOO_MANY_LOGIN_ATTEMPTS`. Failures are counted from `audit_logs` (`auth.login_failed`), so no extra store is needed. Wrong passwords and unknown phones return the same `401 INVALID_CREDENTIALS`; a wrong current password on change returns `400 INVALID_CREDENTIALS`.
-- Phase 1 uses Bearer tokens only. The manager app's HttpOnly-cookie + CSRF variant is added with the manager login (Phase 3), as is removing FCM device tokens on logout.
+- The worker app uses Bearer tokens. **The manager web app (Phase 3) uses cookies**: `POST /auth/web/login` (managers/admins only, else `403 NOT_A_MANAGER`) sets `nest_access` (HttpOnly, path `/`), `nest_refresh` (HttpOnly, path `/api/v1/auth/web`) and `nest_csrf` (readable). Every cookie-authenticated write must send `X-CSRF-Token` = `nest_csrf` (double-submit; `403 CSRF_FAILED`). `POST /auth/web/refresh` rotates (a rejected refresh also clears the cookies), `POST /auth/web/logout` revokes and clears. `COOKIE_DOMAIN` (e.g. `.nest.am`) lets `manager.nest.am` read the CSRF cookie set by `api.nest.am`. Removing FCM device tokens on logout comes with push.
 - Accounts are created with `python -m app.cli create-user …` until the manager app's worker management exists. The password is prompted for, never passed as an argument.
 - Router dependencies: `CurrentAuth`, `PasswordChangeAuth`, `require_roles(...)` (`app/modules/auth/dependencies.py`).
 
@@ -929,6 +929,14 @@ Optional site address with a map pin, preferred date, and photos. Consider makin
 
 A dedicated Next.js app (`apps/manager-web`), built for desktop.
 
+**As built (Phase 3, first slice, 2026-10-18)**: login, dashboard (today's crews with per-worker status, jobs without a crew), jobs (list, create, detail with visits, crew editor with lead + pay per worker, double-booking shown with a link to the conflicting job, cancel visit/job), projects, sites (OpenStreetMap + Leaflet pin and geofence circle; click to move the pin), companies, workers (create, deactivate, reset password).
+- Interface languages: **hy, ru, en** (`src/lib/i18n/{hy,ru,en}.ts`, typed so every language has every key; follows the manager's `locale`, switchable in the sidebar, remembered in localStorage). API error codes map to localized messages.
+- The signed-in pages are client components that call the API directly with the session cookies (`src/lib/api/client.ts`: CSRF header, one shared refresh on 401, then login). No client cache library: `useApi()` is a small hook.
+- Typed client from the committed contract: `npm run gen:api` reads `apps/api/openapi.json`.
+- Times are shown in Asia/Yerevan as `18.10.2026 09:00`; visit times typed by a manager are sent with `+04:00`. Money is shown from the API's decimal strings (`20 000 ֏`).
+- Map tiles come from tile.openstreetmap.org (fine for a handful of managers; switch to a tile provider or self-hosted tiles if usage grows).
+- Next: timesheet review and approval, calendar, worker time off, CSV export, push + reminders.
+
 ## Main navigation
 
 ```text
@@ -1260,6 +1268,8 @@ GET    /timesheets/export.csv?from=&to=
 ```
 
 ### Workers
+
+As built (Phase 3): list/search (`?q=&active=`), create (with a first password; `must_change_password`), edit, deactivate (`is_active=false` revokes all sessions) and reset password (temporary password, must change; sessions revoked). All audited. Time off comes next. `GET /services` lists the offered services for project forms.
 
 ```text
 GET    /workers
@@ -1898,6 +1908,8 @@ Seed script; first real field test with 1–2 workers
 ```
 
 ## Phase 3 — Manager web app
+
+Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). Next: timesheets (review, approve, adjust, location override, CSV), calendar, time off, FCM push + reminders.
 
 ```text
 Login, dashboard, calendar, jobs/visits, crews, workers + time off

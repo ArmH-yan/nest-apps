@@ -85,8 +85,11 @@ Phase 1 (§41) is built. Phase 2: scheduling core, the `/worker/*` API and the a
 
 ## Manager web conventions (apps/manager-web)
 
-- Generate the typed API client from FastAPI's `openapi.json` (`openapi-typescript`). Don't hand-write API types.
-- Auth uses HttpOnly cookies and CSRF protection on state-changing requests.
+- Next.js 16 with `cacheComponents`: read `node_modules/next/dist/docs/` before using an API (see AGENTS.md). Pages under `src/app/(app)/` are client components; the `(app)` layout wraps the shell in `<Suspense>` (needed for `usePathname`/`useParams`), and instant-navigation validation is opt-in (`next.config.ts`).
+- Generate the typed API client with `npm run gen:api` (reads the committed `apps/api/openapi.json`). Don't hand-write API types.
+- Auth uses HttpOnly cookies and CSRF protection on state-changing requests: always go through `src/lib/api/client.ts` (`api.get/post/...`), which adds `X-CSRF-Token` and refreshes the session.
+- Strings go in `src/lib/i18n/{en,hy,ru}.ts` (en is the typed reference). API errors are shown with `errorText()` (code → `error.<CODE>`).
+- Plain CSS with tokens in `src/app/globals.css` (no Tailwind). Maps: Leaflet + OpenStreetMap (`src/components/site-map.tsx`).
 
 ## Commands
 
@@ -117,7 +120,7 @@ docker compose up -d db storage         # PostgreSQL 17 on :5433 (+ nest_test DB
 # manager web (apps/manager-web)
 npm run dev                             # http://localhost:3001
 npm run lint && npm run typecheck && npm run build
-npm run gen:api                         # regenerate src/lib/api/schema.d.ts (API must be running)
+npm run gen:api                         # regenerate src/lib/api/schema.d.ts from apps/api/openapi.json
 
 # worker app (apps/worker-mobile; in Git Bash first: export PATH="/f/flutter/flutter-sdk/bin:$PATH")
 dart run build_runner build --delete-conflicting-outputs   # after changing freezed/json/drift code
