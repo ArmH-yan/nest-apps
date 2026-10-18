@@ -1005,9 +1005,21 @@
             "title": "Project Id",
             "type": "integer"
           },
+          "project_name": {
+            "title": "Project Name",
+            "type": "string"
+          },
+          "site_address": {
+            "title": "Site Address",
+            "type": "string"
+          },
           "site_id": {
             "title": "Site Id",
             "type": "integer"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
           },
           "status": {
             "$ref": "#/components/schemas/JobStatus"
@@ -1034,6 +1046,9 @@
           "title",
           "instructions",
           "estimated_hours",
+          "project_name",
+          "site_name",
+          "site_address",
           "visits"
         ],
         "title": "JobDetailOut",
@@ -1093,6 +1108,100 @@
           "title"
         ],
         "title": "JobIn",
+        "type": "object"
+      },
+      "JobListItemOut": {
+        "properties": {
+          "estimated_hours": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Hours"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "job_type": {
+            "$ref": "#/components/schemas/JobType"
+          },
+          "next_visit_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Visit At"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "integer"
+          },
+          "project_name": {
+            "title": "Project Name",
+            "type": "string"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "integer"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "visit_count": {
+            "title": "Visit Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "site_id",
+          "job_type",
+          "status",
+          "priority",
+          "title",
+          "instructions",
+          "estimated_hours",
+          "project_name",
+          "site_name",
+          "next_visit_at",
+          "visit_count"
+        ],
+        "title": "JobListItemOut",
         "type": "object"
       },
       "JobOut": {
@@ -2142,6 +2251,21 @@
         "title": "RefreshRequest",
         "type": "object"
       },
+      "ResetPasswordIn": {
+        "properties": {
+          "new_password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "New Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "new_password"
+        ],
+        "title": "ResetPasswordIn",
+        "type": "object"
+      },
       "ScheduleEntryOut": {
         "description": "One row of the calendar (§14): a worker on a visit.",
         "properties": {
@@ -2208,6 +2332,34 @@
           "site_id"
         ],
         "title": "ScheduleEntryOut",
+        "type": "object"
+      },
+      "ServiceOut": {
+        "properties": {
+          "name_en": {
+            "title": "Name En",
+            "type": "string"
+          },
+          "name_hy": {
+            "title": "Name Hy",
+            "type": "string"
+          },
+          "name_ru": {
+            "title": "Name Ru",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name_hy",
+          "name_ru",
+          "name_en"
+        ],
+        "title": "ServiceOut",
         "type": "object"
       },
       "SiteIn": {
@@ -2929,6 +3081,74 @@
         "title": "WorkerConfigOut",
         "type": "object"
       },
+      "WorkerIn": {
+        "description": "A new worker account. The manager sets the first password (§7); the worker\nmust change it at first login.",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "employee_code": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Employee Code",
+            "type": "string"
+          },
+          "first_name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "First Name",
+            "type": "string"
+          },
+          "initial_password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Initial Password",
+            "type": "string"
+          },
+          "last_name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Last Name",
+            "type": "string"
+          },
+          "locale": {
+            "$ref": "#/components/schemas/UserLocale",
+            "default": "hy"
+          },
+          "phone": {
+            "maxLength": 32,
+            "title": "Phone",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Skills",
+            "type": "array"
+          }
+        },
+        "required": [
+          "phone",
+          "first_name",
+          "last_name",
+          "employee_code",
+          "initial_password"
+        ],
+        "title": "WorkerIn",
+        "type": "object"
+      },
       "WorkerInfo": {
         "properties": {
           "employee_code": {
@@ -2945,6 +3165,189 @@
           "employee_code"
         ],
         "title": "WorkerInfo",
+        "type": "object"
+      },
+      "WorkerOut": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "employee_code": {
+            "title": "Employee Code",
+            "type": "string"
+          },
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string"
+          },
+          "locale": {
+            "$ref": "#/components/schemas/UserLocale"
+          },
+          "must_change_password": {
+            "title": "Must Change Password",
+            "type": "boolean"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "employee_code",
+          "first_name",
+          "last_name",
+          "full_name",
+          "phone",
+          "email",
+          "locale",
+          "skills",
+          "is_active",
+          "must_change_password"
+        ],
+        "title": "WorkerOut",
+        "type": "object"
+      },
+      "WorkerPatch": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "employee_code": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Code"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserLocale"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills"
+          }
+        },
+        "title": "WorkerPatch",
         "type": "object"
       }
     },
@@ -3097,6 +3500,81 @@
           }
         },
         "summary": "Refresh",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/web/login": {
+      "post": {
+        "description": "Same credentials as /auth/login; tokens go into cookies, never into the body.",
+        "operationId": "web_login_api_v1_auth_web_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Web Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/web/logout": {
+      "post": {
+        "operationId": "web_logout_api_v1_auth_web_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Web Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/web/refresh": {
+      "post": {
+        "operationId": "web_refresh_api_v1_auth_web_refresh_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Web Refresh",
         "tags": [
           "auth"
         ]
@@ -3574,7 +4052,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/JobOut"
+                    "$ref": "#/components/schemas/JobListItemOut"
                   },
                   "title": "Response List Jobs Api V1 Jobs Get",
                   "type": "array"
@@ -4209,6 +4687,37 @@
         "summary": "Schedule",
         "tags": [
           "scheduling"
+        ]
+      }
+    },
+    "/api/v1/services": {
+      "get": {
+        "description": "Services offered (slugs match the website, CLAUDE.md).",
+        "operationId": "list_services_api_v1_services_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceOut"
+                  },
+                  "title": "Response List Services Api V1 Services Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Services",
+        "tags": [
+          "settings"
         ]
       }
     },
@@ -5651,6 +6160,276 @@
         "summary": "Put Time Entry",
         "tags": [
           "worker"
+        ]
+      }
+    },
+    "/api/v1/workers": {
+      "get": {
+        "operationId": "list_workers_api_v1_workers_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WorkerOut"
+                  },
+                  "title": "Response List Workers Api V1 Workers Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Workers",
+        "tags": [
+          "workers"
+        ]
+      },
+      "post": {
+        "operationId": "create_worker_api_v1_workers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Worker",
+        "tags": [
+          "workers"
+        ]
+      }
+    },
+    "/api/v1/workers/{worker_id}": {
+      "get": {
+        "operationId": "get_worker_api_v1_workers__worker_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "title": "Worker Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Worker",
+        "tags": [
+          "workers"
+        ]
+      },
+      "patch": {
+        "operationId": "update_worker_api_v1_workers__worker_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "title": "Worker Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkerPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Worker",
+        "tags": [
+          "workers"
+        ]
+      }
+    },
+    "/api/v1/workers/{worker_id}/reset-password": {
+      "post": {
+        "operationId": "reset_password_api_v1_workers__worker_id__reset_password_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "title": "Worker Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reset Password",
+        "tags": [
+          "workers"
         ]
       }
     },

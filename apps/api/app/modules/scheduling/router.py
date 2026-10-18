@@ -14,6 +14,7 @@ from app.modules.scheduling.schemas import (
     CrewIn,
     JobDetailOut,
     JobIn,
+    JobListItemOut,
     JobOut,
     JobPatch,
     ScheduleEntryOut,
@@ -38,11 +39,10 @@ async def list_jobs(
     project_id: int | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: int = 0,
-) -> list[JobOut]:
-    jobs = await service.list_jobs(
+) -> list[JobListItemOut]:
+    return await service.list_jobs(
         session, status=status, project_id=project_id, limit=limit, offset=offset
     )
-    return [service.job_out(j) for j in jobs]
 
 
 @router.get("/jobs/{job_id}")

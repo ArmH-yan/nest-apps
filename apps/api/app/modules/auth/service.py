@@ -25,7 +25,7 @@ from app.core.security import (
 from app.modules.audit import service as audit
 from app.modules.audit.models import AuditLog
 from app.modules.auth.models import RefreshToken
-from app.modules.users.models import User
+from app.modules.users.models import User, UserRole
 from app.modules.users.service import normalize_email, normalize_phone
 
 
@@ -109,7 +109,9 @@ async def login(
     email: str | None,
     password: str,
     client: ClientInfo,
+    roles: frozenset[UserRole] | None = None,
 ) -> tuple[User, IssuedTokens]:
+    """`roles` limits who may sign in through this channel (the manager web app)."""
     if phone is not None:
         login_key = normalize_phone(phone)
         condition = User.phone == login_key
@@ -141,6 +143,12 @@ async def login(
     assert user is not None  # noqa: S101 — verify_password(None, …) is always False
     if not user.is_active:
         raise _account_disabled()
+    if roles is not None and user.role not in roles:
+        raise AppError(
+            "NOT_A_MANAGER",
+            "This app is for managers. Workers use the NEST Worker app.",
+            status_code=HTTPStatus.FORBIDDEN,
+        )
 
     if password_needs_rehash(user.password_hash):
         user.password_hash = hash_password(password)

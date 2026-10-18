@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # Failed logins allowed per phone/email within the window before 429.
     login_max_failures: int = 5
     login_failure_window_minutes: int = 15
+    # Manager web cookies: e.g. ".nest.am" in production so manager.nest.am can read
+    # the CSRF cookie set by api.nest.am. None = host-only (local development).
+    cookie_domain: str | None = None
 
     # File storage (ARCHITECTURE §24), any S3-compatible service.
     s3_endpoint_url: str = "http://localhost:9000"

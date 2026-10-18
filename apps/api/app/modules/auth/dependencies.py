@@ -14,13 +14,14 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.core.security import InvalidTokenError, decode_access_token
 from app.db.session import get_session
+from app.modules.auth.cookies import ACCESS_COOKIE, check_csrf
 from app.modules.users.models import User, UserRole
 
 # auto_error=False: missing credentials go through our own error format.
@@ -39,13 +40,20 @@ def _unauthorized(code: str, message: str) -> AppError:
 
 
 async def _authenticate(
+    request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
 ) -> AuthContext:
-    if credentials is None:
+    """Bearer token (worker app) or session cookie + CSRF (manager web app)."""
+    if credentials is not None:
+        token = credentials.credentials
+    elif (cookie := request.cookies.get(ACCESS_COOKIE)) is not None:
+        check_csrf(request)
+        token = cookie
+    else:
         raise _unauthorized("NOT_AUTHENTICATED", "Sign in to continue.")
     try:
-        claims = decode_access_token(credentials.credentials)
+        claims = decode_access_token(token)
     except InvalidTokenError as exc:
         if exc.expired:
             raise _unauthorized("TOKEN_EXPIRED", "The access token has expired.") from exc

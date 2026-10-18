@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from http import HTTPStatus
 
-from sqlalchemy import exists, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.dialects.postgresql import Range
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,6 +42,7 @@ from app.modules.scheduling.schemas import (
     CrewMemberOut,
     JobDetailOut,
     JobIn,
+    JobListItemOut,
     JobOut,
     JobPatch,
     ScheduleEntryOut,
@@ -53,6 +54,7 @@ from app.modules.scheduling.transitions import (
     JOB_TRANSITIONS,
     VISIT_TRANSITIONS,
 )
+from app.modules.sites.models import Site
 from app.modules.users.models import User, Worker
 
 _CLOSED_JOB = {JobStatus.COMPLETED, JobStatus.CANCELLED}
@@ -265,13 +267,46 @@ async def list_jobs(
     project_id: int | None,
     limit: int,
     offset: int,
-) -> list[Job]:
-    stmt = select(Job).order_by(Job.id.desc()).limit(limit).offset(offset)
+) -> list[JobListItemOut]:
+    planned = (
+        select(
+            JobVisit.job_id.label("job_id"),
+            func.min(func.lower(JobVisit.period)).label("next_at"),
+        )
+        .where(JobVisit.status == VisitStatus.PLANNED)
+        .group_by(JobVisit.job_id)
+        .subquery()
+    )
+    counts = (
+        select(JobVisit.job_id.label("job_id"), func.count().label("n"))
+        .where(JobVisit.status != VisitStatus.CANCELLED)
+        .group_by(JobVisit.job_id)
+        .subquery()
+    )
+    stmt = (
+        select(Job, Project.name, Site.name, planned.c.next_at, counts.c.n)
+        .join(Project, Project.id == Job.project_id)
+        .join(Site, Site.id == Job.site_id)
+        .outerjoin(planned, planned.c.job_id == Job.id)
+        .outerjoin(counts, counts.c.job_id == Job.id)
+        .order_by(planned.c.next_at.asc().nulls_last(), Job.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
     if status is not None:
         stmt = stmt.where(Job.status == status)
     if project_id is not None:
         stmt = stmt.where(Job.project_id == project_id)
-    return list(await session.scalars(stmt))
+    return [
+        JobListItemOut(
+            **job_out(job).model_dump(),
+            project_name=project_name,
+            site_name=site_name,
+            next_visit_at=next_at,
+            visit_count=n or 0,
+        )
+        for job, project_name, site_name, next_at, n in await session.execute(stmt)
+    ]
 
 
 async def update_job(session: AsyncSession, job_id: int, patch: JobPatch, user: User) -> Job:
@@ -553,8 +588,14 @@ async def job_detail(session: AsyncSession, job_id: int) -> JobDetailOut:
         )
     )
     crew = await _crew_by_visit(session, [v.id for v in visits])
+    project = await get_or_404(session, Project, job.project_id, "project")
+    site = await get_or_404(session, Site, job.site_id, "site")
     return JobDetailOut(
-        **job_out(job).model_dump(), visits=[_visit_out(v, crew[v.id]) for v in visits]
+        **job_out(job).model_dump(),
+        project_name=project.name,
+        site_name=site.name,
+        site_address=site.address,
+        visits=[_visit_out(v, crew[v.id]) for v in visits],
     )
 
 

@@ -106,7 +106,18 @@ class JobOut(BaseModel):
     estimated_hours: Decimal | None
 
 
+class JobListItemOut(JobOut):
+    project_name: str
+    site_name: str
+    # earliest PLANNED visit, for "what's next" in lists
+    next_visit_at: datetime | None
+    visit_count: int
+
+
 class JobDetailOut(JobOut):
+    project_name: str
+    site_name: str
+    site_address: str
     visits: list[VisitOut]
 
 
