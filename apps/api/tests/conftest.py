@@ -16,6 +16,8 @@ from alembic import command
 from app.core.config import get_settings
 from app.db.models import Base
 from app.db.session import get_engine, get_sessionmaker
+from app.modules.files.storage import get_storage
+from tests.factories import FakeStorage
 
 API_DIR = Path(__file__).resolve().parents[1]
 
@@ -67,6 +69,14 @@ def app() -> FastAPI:
     from app.main import create_app
 
     return create_app()
+
+
+@pytest.fixture
+def storage(app: FastAPI) -> Iterator[FakeStorage]:
+    fake = FakeStorage()
+    app.dependency_overrides[get_storage] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_storage, None)
 
 
 @pytest.fixture

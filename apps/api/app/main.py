@@ -21,6 +21,7 @@ from app.modules.projects.router import router as projects_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.settings.router import router as settings_router
 from app.modules.sites.router import router as sites_router
+from app.modules.timesheets.router import router as timesheets_router
 from app.modules.users.router import router as users_router
 from app.modules.worker_api.router import router as worker_router
 from app.modules.workers.router import router as workers_router
@@ -70,6 +71,7 @@ def create_app() -> FastAPI:
     api_v1.include_router(projects_router)
     api_v1.include_router(scheduling_router)
     api_v1.include_router(settings_router)
+    api_v1.include_router(timesheets_router)
     api_v1.include_router(worker_router)
     api_v1.include_router(workers_router)
     app.include_router(api_v1)

@@ -2,51 +2,33 @@
 server-side GPS/time checks and flags, completion guards and side effects."""
 
 import uuid
-from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
 import pytest
-from fastapi import FastAPI
 from httpx import AsyncClient, Response
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.files.storage import PresignedUpload, StoredObject, get_storage
 from app.modules.materials.models import CatalogItem
 from app.modules.scheduling.models import VisitAssignment
 from app.modules.users.models import User
-from tests.factories import Scene, at, iso, make_scene, make_visit, make_worker, post, token
+from tests.factories import (
+    FakeStorage,
+    Scene,
+    at,
+    iso,
+    make_scene,
+    make_visit,
+    make_worker,
+    post,
+    token,
+)
 
 SITE = (40.2262, 44.4930)  # make_scene's pin
 NEAR = (40.2265, 44.4932)  # ~38 m away
 FAR = (40.2340, 44.4930)  # ~870 m away
-
-
-class FakeStorage:
-    def __init__(self) -> None:
-        self.objects: dict[str, int] = {}
-        self.signed: list[str] = []
-
-    def presign_put(self, key: str, content_type: str) -> PresignedUpload:
-        self.signed.append(key)
-        return PresignedUpload(f"http://storage.test/{key}", {"Content-Type": content_type}, at(1))
-
-    async def head(self, key: str) -> StoredObject | None:
-        size = self.objects.get(key)
-        return None if size is None else StoredObject(size, "image/jpeg")
-
-    def upload(self, key: str, size: int = 120_000) -> None:
-        self.objects[key] = size
-
-
-@pytest.fixture
-def storage(app: FastAPI) -> Iterator[FakeStorage]:
-    fake = FakeStorage()
-    app.dependency_overrides[get_storage] = lambda: fake
-    yield fake
-    app.dependency_overrides.pop(get_storage, None)
 
 
 @dataclass

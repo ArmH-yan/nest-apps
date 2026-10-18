@@ -935,7 +935,8 @@ A dedicated Next.js app (`apps/manager-web`), built for desktop.
 - Typed client from the committed contract: `npm run gen:api` reads `apps/api/openapi.json`.
 - Times are shown in Asia/Yerevan as `18.10.2026 09:00`; visit times typed by a manager are sent with `+04:00`. Money is shown from the API's decimal strings (`20 000 ֏`).
 - Map tiles come from tile.openstreetmap.org (fine for a handful of managers; switch to a tile provider or self-hosted tiles if usage grows).
-- Next: timesheet review and approval, calendar, worker time off, CSV export, push + reminders.
+- **Timesheets (2026-10-18)**: list (`/timesheets`; filters for date range, worker and "waiting for approval / flagged / approved / all", kept in the URL), and a detail page (`/timesheets/{assignment_id}`). See "Timesheets" below.
+- Next: the planning timeline (Gantt, §14a), worker time off, push + reminders.
 
 ## Main navigation
 
@@ -943,7 +944,7 @@ A dedicated Next.js app (`apps/manager-web`), built for desktop.
 Dashboard
 Requests
 Projects
-Calendar
+Planning         (timeline / Gantt, §14a)
 Jobs
 Timesheets
 Quotes
@@ -979,6 +980,16 @@ For each worker and day, the manager sees:
 
 Actions: **approve**, **adjust** (with a reason; the change is audited), or **override the location** (with a reason). Approving a task makes its `pay_amount` count as earned in the worker app. Approved time and pay can be exported to CSV for payroll.
 
+As built (2026-10-18, `app/modules/timesheets`):
+- One row = one `visit_assignment` that is `IN_PROGRESS` or `SUBMITTED`, filtered by the start of the visit. Work and break totals are always **recomputed from `time_entries`** (an open entry counts until now), never taken from the app.
+- **Approve**: only `SUBMITTED` tasks (otherwise `409 NOT_SUBMITTED`); it is idempotent. It sets `reviewed_by`/`reviewed_at` and audits `timesheet.approved`. In the list, approval is one click only for tasks without flags; flagged tasks are approved from the detail page.
+- Approval **locks** the timesheet: after it, adjust, location override and crew pay changes return `409 ASSIGNMENT_REVIEWED`.
+- **Adjust** changes one time entry's start and end. It needs a reason, may not overlap another entry (`409 TIME_ENTRY_OVERLAP`, from the exclusion constraint), recomputes `assignment_completions.work_seconds/break_seconds`, and audits `timesheet.adjusted` with before, after and reason.
+- **Override location** records the reason on the check (`override_reason`, `overridden_by`). It removes `OUTSIDE_GEOFENCE` once no outside, non-manual check is left without a reason, and audits `location_check.overridden`.
+- **CSV** (`export.csv`) lists approved tasks only. It is UTF-8 with a BOM (Excel shows Armenian and Russian names), with columns `date, employee_code, worker, job, role, work_hours, break_hours, pay_amount, currency, approved_at, approved_by` and dates in Yerevan. The web app downloads it with the session cookies (`downloadFile` in `client.ts`).
+- Photos on the detail page use short-lived presigned GET URLs (`Storage.presign_get`).
+- The map reuses the site map and adds green (on site or accepted) and red (outside) dots for the checks.
+
 ---
 
 # 14. Scheduling
@@ -991,7 +1002,7 @@ The manager must be able to:
 - reschedule or cancel visits (the affected workers get a push)
 - see worker availability (existing assignments + time off)
 
-Calendar views:
+Calendar views (built as the two modes of the planning timeline, §14a):
 
 ```text
 Day      (by worker, resource timeline)
@@ -1017,6 +1028,77 @@ Karen        SURV #14       INST #12       DISM #9
 - A worker must have the required skill for the job type (warning).
 
 Travel time, automatic scheduling and route optimization come later.
+
+---
+
+# 14a. Planning Timeline (Gantt chart) — plan
+
+Status: **planned (2026-10-18)**, Phase 3, next after timesheets. It replaces the separate "Calendar" screen: the views in §14 become two modes of one timeline screen (`/planning`).
+
+### Why
+
+NEST's work is time-shaped. A project's net or dust screen stays on site for weeks or months, between installation and dismantling, and inspections happen while it is up. The managers need to answer these at a glance:
+- what is installed where, and until when
+- which dismantlings are coming up or overdue
+- which visits still have no crew
+- who is busy on which days
+
+A list of jobs can't show this.
+
+### Mode 1: by project (the Gantt)
+
+```text
+                        Oct 13   Oct 20   Oct 27   Nov 3 … Dec 15
+P-2026-0003 Davtashen   [■■ INST]━━━━━━━━━━━━━━ on site ━━━━━━━━━━━━[DISM]
+  Install Safety Net    ■■                                    (2 visits)
+  Monthly inspection             ▲          ▲          ▲
+  Dismantling                                                    □ (no crew)
+P-2026-0005 Komitas          [SURV]  ┄┄┄┄ expected ┄┄┄┄
+```
+
+- One **row per project** with status WON, INSTALLED or DISMANTLED, plus QUOTED projects that have an expected install date. The row expands into one sub-row per job.
+- **Project bar**:
+  - planned: `expected_install_date` → `expected_dismantle_date`, dashed
+  - actual "on site" period: first DONE installation visit → last DONE dismantling visit (or today if not dismantled yet), solid
+- **Visit bars** on the job rows, coloured by job type. A visit without a crew is outlined only, a cancelled visit is not shown, and a DONE visit is dimmed.
+- **Markers**:
+  - a "today" line
+  - **overdue dismantling**: the project is INSTALLED and `expected_dismantle_date` < today, shown in red
+  - the dismantle date approaching within 7 days, shown in amber
+- **Zoom**: 2 weeks (day columns), 3 months (week columns, the default), 1 year (month columns). Scroll left and right; "Today" button.
+- Hovering a bar shows the time, the crew and the status. Clicking a bar opens the job page (§13).
+
+### Mode 2: by worker (resource timeline)
+
+- One row per active worker; the bars are that worker's assignments (`GET /schedule`), coloured by job type. Days without work are empty.
+- Later: time off (`worker_time_off`) shown as grey blocks.
+- This is the §14 Day/Week view. It answers "who is free on Thursday" before the manager opens the crew editor.
+
+### v1 scope (deliberately small)
+
+- Read-only, plus click-through to the job. Visits are still created and changed on the job page, where the double-booking checks and their messages already exist.
+- **Not in v1**: dependencies and arrows between jobs (NEST's order is fixed by the lifecycles, §10–§11), critical path, percent complete, baselines, PDF export.
+- **v1.1**: drag a visit bar to another day. This calls the existing `PATCH /visits/{id}`, keeps the same time of day, and shows `WORKER_ALREADY_BOOKED` inline and snaps back on 409. The crew is notified as with any other reschedule.
+
+### Backend
+
+- `GET /api/v1/planning/projects?from=&to=` (MANAGER/ADMIN, read-only). It returns the projects that overlap the window, each with:
+  - its jobs
+  - non-cancelled visits, each with crew count and names
+  - planned dates and the derived actual on-site period
+- It loads everything in one round of queries (no N+1) and lives in the `scheduling` module's service.
+- Mode 2 reuses `GET /schedule?from=&to=&worker_id=`.
+- No schema change: everything comes from `projects`, `jobs`, `job_visits` and `visit_assignments`.
+
+### Frontend
+
+- Our own component (`src/components/timeline.tsx`): CSS grid for the date axis and absolutely positioned bars (left and width computed from Yerevan dates), sticky row labels, and hy/ru/en labels from the existing i18n.
+- **No Gantt library.** We have at most ~50 rows and need Yerevan dates, our three languages and our styles. Libraries add weight and licensing questions (dhtmlx-gantt is GPL/commercial) and are hard to restyle. If v1.1 drag-and-drop turns out hard, pointer events on the bar are enough; no drag library is needed.
+
+### Tests
+
+- API: the window filter (a visit straddling the edge is included), the derived on-site period, overdue detection, and authorization (a worker gets 403).
+- Web: typecheck, lint and build, and a manual check in the browser with the demo seed (the seed gets a long-running INSTALLED project with monthly inspections and an expected dismantle date).
 
 ---
 
@@ -1259,7 +1341,7 @@ GET    /schedule?from=&to=&worker_id=
 ### Timesheets
 
 ```text
-GET    /timesheets?from=&to=&worker_id=&flagged=
+GET    /timesheets?from=&to=&worker_id=&flagged=&reviewed=
 GET    /timesheets/assignments/{id}
 POST   /timesheets/assignments/{id}/approve
 POST   /timesheets/assignments/{id}/adjust
@@ -1909,11 +1991,12 @@ Seed script; first real field test with 1–2 workers
 
 ## Phase 3 — Manager web app
 
-Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). Next: timesheets (review, approve, adjust, location override, CSV), calendar, time off, FCM push + reminders.
+Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). **Timesheets done (2026-10-18)**: review, approve, adjust, location override and CSV, both API and web (§13 "Timesheets"). Next: the planning timeline (Gantt, §14a), then time off, then FCM push + reminders.
 
 ```text
-Login, dashboard, calendar, jobs/visits, crews, workers + time off
+Login, dashboard, jobs/visits, crews, workers + time off
 Timesheets review (map, flags, approve/adjust, CSV export)
+Planning timeline (Gantt by project + resource view by worker, §14a; replaces "calendar")
 FCM push + reminders
 ```
 
@@ -1968,7 +2051,7 @@ Travel time / route planning; live location; BigQuery
 - Login
 - Requests: list, detail, convert, reject
 - Companies, contacts, sites (map pin, geofence radius)
-- Projects; jobs with visits; crew assignment; calendar
+- Projects; jobs with visits; crew assignment; planning timeline (Gantt, §14a)
 - Worker management + time off + password reset
 - Timesheets review
 - Connect Telegram (crew chat runs in the NEST Telegram bot, §26a)

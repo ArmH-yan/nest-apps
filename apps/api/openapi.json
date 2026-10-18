@@ -1,6 +1,40 @@
 {
   "components": {
     "schemas": {
+      "AdjustIn": {
+        "description": "Corrects one time entry (e.g. \"forgot to stop the break\"). Audited (§31).",
+        "properties": {
+          "ended_at": {
+            "format": "date-time",
+            "title": "Ended At",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "time_entry_id": {
+            "format": "uuid",
+            "title": "Time Entry Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "time_entry_id",
+          "started_at",
+          "ended_at",
+          "reason"
+        ],
+        "title": "AdjustIn",
+        "type": "object"
+      },
       "AssignmentRole": {
         "enum": [
           "LEAD",
@@ -1465,6 +1499,82 @@
         "title": "LocationCheckOut",
         "type": "object"
       },
+      "LocationCheckRowOut": {
+        "properties": {
+          "accuracy_m": {
+            "title": "Accuracy M",
+            "type": "number"
+          },
+          "captured_at": {
+            "format": "date-time",
+            "title": "Captured At",
+            "type": "string"
+          },
+          "client_distance_m": {
+            "title": "Client Distance M",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_mocked": {
+            "title": "Is Mocked",
+            "type": "boolean"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/CheckPurpose"
+          },
+          "radius_m": {
+            "title": "Radius M",
+            "type": "number"
+          },
+          "server_distance_m": {
+            "title": "Server Distance M",
+            "type": "number"
+          },
+          "server_verified": {
+            "title": "Server Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "purpose",
+          "latitude",
+          "longitude",
+          "accuracy_m",
+          "is_mocked",
+          "captured_at",
+          "client_distance_m",
+          "server_distance_m",
+          "radius_m",
+          "server_verified",
+          "override_reason"
+        ],
+        "title": "LocationCheckRowOut",
+        "type": "object"
+      },
       "LoginRequest": {
         "description": "Phone is the normal identifier and email is optional (ARCHITECTURE §7).\nSend exactly one of them.",
         "properties": {
@@ -1644,6 +1754,46 @@
         "title": "MaterialMovementOut",
         "type": "object"
       },
+      "MaterialRowOut": {
+        "properties": {
+          "item_name": {
+            "title": "Item Name",
+            "type": "string"
+          },
+          "movement": {
+            "$ref": "#/components/schemas/Movement"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_name",
+          "unit",
+          "quantity",
+          "movement",
+          "note"
+        ],
+        "title": "MaterialRowOut",
+        "type": "object"
+      },
       "MeResponse": {
         "properties": {
           "email": {
@@ -1820,6 +1970,58 @@
         ],
         "title": "NotificationType",
         "type": "string"
+      },
+      "OverrideIn": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "OverrideIn",
+        "type": "object"
+      },
+      "PhotoOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "taken_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taken At"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "taken_at",
+          "kind"
+        ],
+        "title": "PhotoOut",
+        "type": "object"
       },
       "PresignIn": {
         "properties": {
@@ -2873,6 +3075,414 @@
           "task_status"
         ],
         "title": "TimeEntryOut",
+        "type": "object"
+      },
+      "TimeEntryRowOut": {
+        "properties": {
+          "client_clock_offset_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Clock Offset S"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EntryKind"
+          },
+          "received_at": {
+            "format": "date-time",
+            "title": "Received At",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "started_at",
+          "ended_at",
+          "client_clock_offset_s",
+          "received_at"
+        ],
+        "title": "TimeEntryRowOut",
+        "type": "object"
+      },
+      "TimesheetDetailOut": {
+        "properties": {
+          "assignment_id": {
+            "title": "Assignment Id",
+            "type": "integer"
+          },
+          "break_seconds": {
+            "title": "Break Seconds",
+            "type": "integer"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/LocationCheckRowOut"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "employee_code": {
+            "title": "Employee Code",
+            "type": "string"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/TimeEntryRowOut"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "integer"
+          },
+          "job_title": {
+            "title": "Job Title",
+            "type": "string"
+          },
+          "job_type": {
+            "$ref": "#/components/schemas/JobType"
+          },
+          "materials": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialRowOut"
+            },
+            "title": "Materials",
+            "type": "array"
+          },
+          "pay_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pay Amount"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOut"
+            },
+            "title": "Photos",
+            "type": "array"
+          },
+          "reported_break_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported Break Seconds"
+          },
+          "reported_work_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported Work Seconds"
+          },
+          "review_flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Review Flags",
+            "type": "array"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AssignmentRole"
+          },
+          "scheduled_end": {
+            "format": "date-time",
+            "title": "Scheduled End",
+            "type": "string"
+          },
+          "scheduled_start": {
+            "format": "date-time",
+            "title": "Scheduled Start",
+            "type": "string"
+          },
+          "site_latitude": {
+            "title": "Site Latitude",
+            "type": "number"
+          },
+          "site_longitude": {
+            "title": "Site Longitude",
+            "type": "number"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
+          },
+          "site_radius_m": {
+            "title": "Site Radius M",
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          },
+          "work_seconds": {
+            "title": "Work Seconds",
+            "type": "integer"
+          },
+          "worker_id": {
+            "title": "Worker Id",
+            "type": "integer"
+          },
+          "worker_name": {
+            "title": "Worker Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "worker_id",
+          "worker_name",
+          "employee_code",
+          "job_id",
+          "job_title",
+          "job_type",
+          "site_name",
+          "scheduled_start",
+          "scheduled_end",
+          "role",
+          "status",
+          "work_seconds",
+          "break_seconds",
+          "review_flags",
+          "pay_amount",
+          "currency",
+          "reviewed_at",
+          "reviewed_by_name",
+          "site_latitude",
+          "site_longitude",
+          "site_radius_m",
+          "completed_at",
+          "reported_work_seconds",
+          "reported_break_seconds",
+          "comment",
+          "entries",
+          "checks",
+          "photos",
+          "materials"
+        ],
+        "title": "TimesheetDetailOut",
+        "type": "object"
+      },
+      "TimesheetRowOut": {
+        "description": "One worker on one visit (ARCHITECTURE §13 \"Timesheets\").",
+        "properties": {
+          "assignment_id": {
+            "title": "Assignment Id",
+            "type": "integer"
+          },
+          "break_seconds": {
+            "title": "Break Seconds",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "employee_code": {
+            "title": "Employee Code",
+            "type": "string"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "integer"
+          },
+          "job_title": {
+            "title": "Job Title",
+            "type": "string"
+          },
+          "job_type": {
+            "$ref": "#/components/schemas/JobType"
+          },
+          "pay_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pay Amount"
+          },
+          "review_flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Review Flags",
+            "type": "array"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AssignmentRole"
+          },
+          "scheduled_end": {
+            "format": "date-time",
+            "title": "Scheduled End",
+            "type": "string"
+          },
+          "scheduled_start": {
+            "format": "date-time",
+            "title": "Scheduled Start",
+            "type": "string"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          },
+          "work_seconds": {
+            "title": "Work Seconds",
+            "type": "integer"
+          },
+          "worker_id": {
+            "title": "Worker Id",
+            "type": "integer"
+          },
+          "worker_name": {
+            "title": "Worker Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "worker_id",
+          "worker_name",
+          "employee_code",
+          "job_id",
+          "job_title",
+          "job_type",
+          "site_name",
+          "scheduled_start",
+          "scheduled_end",
+          "role",
+          "status",
+          "work_seconds",
+          "break_seconds",
+          "review_flags",
+          "pay_amount",
+          "currency",
+          "reviewed_at",
+          "reviewed_by_name"
+        ],
+        "title": "TimesheetRowOut",
         "type": "object"
       },
       "TokenResponse": {
@@ -4343,6 +4953,57 @@
         ]
       }
     },
+    "/api/v1/location-checks/{check_id}/override": {
+      "post": {
+        "operationId": "override_location_api_v1_location_checks__check_id__override_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "check_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Check Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OverrideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Override Location",
+        "tags": [
+          "timesheets"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "description": "The signed-in user. Works while a password change is pending, so clients\ncan show the change-password screen.",
@@ -4960,6 +5621,309 @@
         "summary": "Update Site",
         "tags": [
           "sites"
+        ]
+      }
+    },
+    "/api/v1/timesheets": {
+      "get": {
+        "operationId": "list_timesheets_api_v1_timesheets_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "worker_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Worker Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Flagged"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reviewed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reviewed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TimesheetRowOut"
+                  },
+                  "title": "Response List Timesheets Api V1 Timesheets Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Timesheets",
+        "tags": [
+          "timesheets"
+        ]
+      }
+    },
+    "/api/v1/timesheets/assignments/{assignment_id}": {
+      "get": {
+        "operationId": "get_timesheet_api_v1_timesheets_assignments__assignment_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "title": "Assignment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimesheetDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Timesheet",
+        "tags": [
+          "timesheets"
+        ]
+      }
+    },
+    "/api/v1/timesheets/assignments/{assignment_id}/adjust": {
+      "post": {
+        "operationId": "adjust_api_v1_timesheets_assignments__assignment_id__adjust_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "title": "Assignment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Adjust",
+        "tags": [
+          "timesheets"
+        ]
+      }
+    },
+    "/api/v1/timesheets/assignments/{assignment_id}/approve": {
+      "post": {
+        "operationId": "approve_api_v1_timesheets_assignments__assignment_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "title": "Assignment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve",
+        "tags": [
+          "timesheets"
+        ]
+      }
+    },
+    "/api/v1/timesheets/export.csv": {
+      "get": {
+        "operationId": "export_csv_api_v1_timesheets_export_csv_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export Csv",
+        "tags": [
+          "timesheets"
         ]
       }
     },

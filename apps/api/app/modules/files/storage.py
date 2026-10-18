@@ -41,6 +41,8 @@ class StoredObject:
 class Storage(Protocol):
     def presign_put(self, key: str, content_type: str) -> PresignedUpload: ...
 
+    def presign_get(self, key: str) -> str: ...
+
     async def head(self, key: str) -> StoredObject | None: ...
 
 
@@ -78,6 +80,15 @@ class S3Storage:
             ExpiresIn=int(PRESIGN_TTL.total_seconds()),
         )
         return PresignedUpload(url, {"Content-Type": content_type}, utcnow() + PRESIGN_TTL)
+
+    def presign_get(self, key: str) -> str:
+        """Short-lived download link (manager views photos, §24). Signed for the
+        internal endpoint: browsers on the office network reach it like the API."""
+        return self._internal.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self._bucket, "Key": key},
+            ExpiresIn=int(PRESIGN_TTL.total_seconds()),
+        )
 
     async def head(self, key: str) -> StoredObject | None:
         def _head() -> StoredObject | None:

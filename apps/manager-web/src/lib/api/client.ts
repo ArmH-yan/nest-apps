@@ -106,7 +106,7 @@ async function parse<T>(response: Response): Promise<T> {
   return body as T;
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function sendWithRefresh(path: string, init: RequestInit): Promise<Response> {
   let response: Response;
   try {
     response = await send(path, init);
@@ -120,7 +120,23 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       onSessionEnded?.();
     }
   }
-  return parse<T>(response);
+  return response;
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return parse<T>(await sendWithRefresh(path, init));
+}
+
+/** GET a file (e.g. the timesheet CSV) with the session cookies and save it. */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const response = await sendWithRefresh(path, {});
+  if (!response.ok) await parse(response); // throws the API error
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 export const api = {

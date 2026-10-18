@@ -41,6 +41,29 @@ export function yerevanInstant(date: string, time: string): string {
   return `${date}T${time}:00${OFFSET}`;
 }
 
+/** "2026-10-18" + n days (calendar arithmetic, no time zone involved). */
+export function addDays(date: string, n: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** ISO instant → "2026-10-18T09:00" in Yerevan, for <input type="datetime-local">. */
+export function yerevanLocalInput(iso: string): string {
+  return `${yerevanDate(iso)}T${formatTime(iso)}`;
+}
+
+/** <input type="datetime-local"> value (Yerevan) → ISO instant. */
+export function fromLocalInput(value: string): string {
+  return `${value}:00${OFFSET}`;
+}
+
+/** 27000 → "7:30" (hours:minutes; the same in every language). */
+export function formatDuration(seconds: number): string {
+  const minutes = Math.round(seconds / 60);
+  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
 /** "25000.00" → "25 000 ֏" without going through a float. */
 export function formatMoney(amount: string | null | undefined): string {
   if (amount == null || amount === "") return "—";

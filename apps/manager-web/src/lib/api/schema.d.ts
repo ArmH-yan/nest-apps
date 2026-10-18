@@ -271,6 +271,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/location-checks/{check_id}/override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Override Location */
+        post: operations["override_location_api_v1_location_checks__check_id__override_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -399,6 +416,91 @@ export interface paths {
         head?: never;
         /** Update Site */
         patch: operations["update_site_api_v1_sites__site_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/timesheets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Timesheets */
+        get: operations["list_timesheets_api_v1_timesheets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/timesheets/assignments/{assignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Timesheet */
+        get: operations["get_timesheet_api_v1_timesheets_assignments__assignment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/timesheets/assignments/{assignment_id}/adjust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adjust */
+        post: operations["adjust_api_v1_timesheets_assignments__assignment_id__adjust_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/timesheets/assignments/{assignment_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approve_api_v1_timesheets_assignments__assignment_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/timesheets/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Csv */
+        get: operations["export_csv_api_v1_timesheets_export_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/visits/{visit_id}": {
@@ -771,6 +873,29 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdjustIn
+         * @description Corrects one time entry (e.g. "forgot to stop the break"). Audited (§31).
+         */
+        AdjustIn: {
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Time Entry Id
+             * Format: uuid
+             */
+            time_entry_id: string;
+        };
         /**
          * AssignmentRole
          * @enum {string}
@@ -1205,6 +1330,38 @@ export interface components {
             /** Server Verified */
             server_verified: boolean;
         };
+        /** LocationCheckRowOut */
+        LocationCheckRowOut: {
+            /** Accuracy M */
+            accuracy_m: number;
+            /**
+             * Captured At
+             * Format: date-time
+             */
+            captured_at: string;
+            /** Client Distance M */
+            client_distance_m: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Mocked */
+            is_mocked: boolean;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Override Reason */
+            override_reason: string | null;
+            purpose: components["schemas"]["CheckPurpose"];
+            /** Radius M */
+            radius_m: number;
+            /** Server Distance M */
+            server_distance_m: number;
+            /** Server Verified */
+            server_verified: boolean;
+        };
         /**
          * LoginRequest
          * @description Phone is the normal identifier and email is optional (ARCHITECTURE §7).
@@ -1265,6 +1422,18 @@ export interface components {
             /** Task Id */
             task_id: number;
         };
+        /** MaterialRowOut */
+        MaterialRowOut: {
+            /** Item Name */
+            item_name: string;
+            movement: components["schemas"]["Movement"];
+            /** Note */
+            note: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Unit */
+            unit: string;
+        };
         /** MeResponse */
         MeResponse: {
             /** Email */
@@ -1321,6 +1490,25 @@ export interface components {
          * @enum {string}
          */
         NotificationType: "TASK_ASSIGNED" | "TASK_CHANGED" | "TASK_CANCELLED" | "TASK_REMINDER" | "SUBMISSION_ACCEPTED";
+        /** OverrideIn */
+        OverrideIn: {
+            /** Reason */
+            reason: string;
+        };
+        /** PhotoOut */
+        PhotoOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Taken At */
+            taken_at: string | null;
+            /** Url */
+            url: string;
+        };
         /** PresignIn */
         PresignIn: {
             /**
@@ -1633,6 +1821,142 @@ export interface components {
             /** Task Id */
             task_id: number;
             task_status: components["schemas"]["AssignmentStatus"];
+        };
+        /** TimeEntryRowOut */
+        TimeEntryRowOut: {
+            /** Client Clock Offset S */
+            client_clock_offset_s: number | null;
+            /** Ended At */
+            ended_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["EntryKind"];
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+        };
+        /** TimesheetDetailOut */
+        TimesheetDetailOut: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Break Seconds */
+            break_seconds: number;
+            /** Checks */
+            checks: components["schemas"]["LocationCheckRowOut"][];
+            /** Comment */
+            comment: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Currency */
+            currency: string;
+            /** Employee Code */
+            employee_code: string;
+            /** Entries */
+            entries: components["schemas"]["TimeEntryRowOut"][];
+            /** Job Id */
+            job_id: number;
+            /** Job Title */
+            job_title: string;
+            job_type: components["schemas"]["JobType"];
+            /** Materials */
+            materials: components["schemas"]["MaterialRowOut"][];
+            /** Pay Amount */
+            pay_amount: string | null;
+            /** Photos */
+            photos: components["schemas"]["PhotoOut"][];
+            /** Reported Break Seconds */
+            reported_break_seconds: number | null;
+            /** Reported Work Seconds */
+            reported_work_seconds: number | null;
+            /** Review Flags */
+            review_flags: string[];
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Reviewed By Name */
+            reviewed_by_name: string | null;
+            role: components["schemas"]["AssignmentRole"];
+            /**
+             * Scheduled End
+             * Format: date-time
+             */
+            scheduled_end: string;
+            /**
+             * Scheduled Start
+             * Format: date-time
+             */
+            scheduled_start: string;
+            /** Site Latitude */
+            site_latitude: number;
+            /** Site Longitude */
+            site_longitude: number;
+            /** Site Name */
+            site_name: string;
+            /** Site Radius M */
+            site_radius_m: number;
+            status: components["schemas"]["AssignmentStatus"];
+            /** Work Seconds */
+            work_seconds: number;
+            /** Worker Id */
+            worker_id: number;
+            /** Worker Name */
+            worker_name: string;
+        };
+        /**
+         * TimesheetRowOut
+         * @description One worker on one visit (ARCHITECTURE §13 "Timesheets").
+         */
+        TimesheetRowOut: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Break Seconds */
+            break_seconds: number;
+            /** Currency */
+            currency: string;
+            /** Employee Code */
+            employee_code: string;
+            /** Job Id */
+            job_id: number;
+            /** Job Title */
+            job_title: string;
+            job_type: components["schemas"]["JobType"];
+            /** Pay Amount */
+            pay_amount: string | null;
+            /** Review Flags */
+            review_flags: string[];
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Reviewed By Name */
+            reviewed_by_name: string | null;
+            role: components["schemas"]["AssignmentRole"];
+            /**
+             * Scheduled End
+             * Format: date-time
+             */
+            scheduled_end: string;
+            /**
+             * Scheduled Start
+             * Format: date-time
+             */
+            scheduled_start: string;
+            /** Site Name */
+            site_name: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /** Work Seconds */
+            work_seconds: number;
+            /** Worker Id */
+            worker_id: number;
+            /** Worker Name */
+            worker_name: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -2431,6 +2755,39 @@ export interface operations {
             };
         };
     };
+    override_location_api_v1_location_checks__check_id__override_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                check_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverrideIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     me_api_v1_me_get: {
         parameters: {
             query?: never;
@@ -2757,6 +3114,166 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SiteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_timesheets_api_v1_timesheets_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                worker_id?: number | null;
+                flagged?: boolean | null;
+                reviewed?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimesheetRowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_timesheet_api_v1_timesheets_assignments__assignment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimesheetDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adjust_api_v1_timesheets_assignments__assignment_id__adjust_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_api_v1_timesheets_assignments__assignment_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_csv_api_v1_timesheets_export_csv_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

@@ -7,6 +7,7 @@ from typing import Any
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.files.storage import PresignedUpload, StoredObject
 from app.modules.users.models import User, UserRole, Worker
 from app.modules.users.service import create_user, get_worker_for_user
 
@@ -24,6 +25,28 @@ def at(hours: float, day: int = 0) -> datetime:
 
 def iso(dt: datetime) -> str:
     return dt.isoformat()
+
+
+class FakeStorage:
+    """In-memory stand-in for S3 (the `storage` fixture installs it)."""
+
+    def __init__(self) -> None:
+        self.objects: dict[str, int] = {}
+        self.signed: list[str] = []
+
+    def presign_put(self, key: str, content_type: str) -> PresignedUpload:
+        self.signed.append(key)
+        return PresignedUpload(f"http://storage.test/{key}", {"Content-Type": content_type}, at(1))
+
+    def presign_get(self, key: str) -> str:
+        return f"http://storage.test/{key}?download"
+
+    async def head(self, key: str) -> StoredObject | None:
+        size = self.objects.get(key)
+        return None if size is None else StoredObject(size, "image/jpeg")
+
+    def upload(self, key: str, size: int = 120_000) -> None:
+        self.objects[key] = size
 
 
 async def make_user(

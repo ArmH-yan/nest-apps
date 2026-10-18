@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/en";
 
 export function PageHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
@@ -71,6 +72,21 @@ const TONES: Record<string, Tone> = {
 
 export function StatusBadge({ status, label }: { status: string; label: string }) {
   return <span className={`badge ${TONES[status] ?? "neutral"}`}>{label}</span>;
+}
+
+/** Review flags set by the server (OUTSIDE_GEOFENCE, LATE_SYNC, …; ARCHITECTURE §19). */
+export function Flags({ flags }: { flags: string[] }) {
+  const { t } = useI18n();
+  if (flags.length === 0) return <span className="muted">{t("common.none")}</span>;
+  return (
+    <span className="flags">
+      {flags.map((f) => (
+        <span key={f} className="badge warn">
+          {t(`flag.${f}` as MessageKey)}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 /** Native <dialog>: focus trap, Esc to close and backdrop for free. */
