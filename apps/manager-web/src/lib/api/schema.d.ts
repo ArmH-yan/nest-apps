@@ -201,6 +201,108 @@ export interface paths {
         patch: operations["update_contact_api_v1_contacts__contact_id__patch"];
         trace?: never;
     };
+    "/api/v1/insights/companies/{company_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Company Insights */
+        get: operations["company_insights_api_v1_insights_companies__company_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/insights/companies/{company_id}/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Company Jobs */
+        get: operations["company_jobs_api_v1_insights_companies__company_id__jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/insights/companies/{company_id}/jobs.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Company Jobs Csv */
+        get: operations["company_jobs_csv_api_v1_insights_companies__company_id__jobs_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/insights/workers/{worker_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Worker Insights */
+        get: operations["worker_insights_api_v1_insights_workers__worker_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/insights/workers/{worker_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Worker Tasks */
+        get: operations["worker_tasks_api_v1_insights_workers__worker_id__tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/insights/workers/{worker_id}/tasks.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Worker Tasks Csv */
+        get: operations["worker_tasks_csv_api_v1_insights_workers__worker_id__tasks_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs": {
         parameters: {
             query?: never;
@@ -947,6 +1049,104 @@ export interface components {
             /** Tax Id */
             tax_id?: string | null;
         };
+        /**
+         * CompanyInsightsOut
+         * @description What NEST did for one customer company in the window (§13a).
+         */
+        CompanyInsightsOut: {
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Crew Pay */
+            crew_pay: string;
+            /**
+             * Currency
+             * @default AMD
+             */
+            currency: string;
+            /** First Visit At */
+            first_visit_at: string | null;
+            /** Jobs By Type */
+            jobs_by_type: components["schemas"]["JobTypeCountOut"][];
+            /** Last Visit At */
+            last_visit_at: string | null;
+            /** Materials */
+            materials: components["schemas"]["MaterialTotalOut"][];
+            /** Mean Work Seconds Per Visit */
+            mean_work_seconds_per_visit: number;
+            /** Months */
+            months: components["schemas"]["CompanyMonthOut"][];
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date
+             */
+            period_start: string;
+            /** Projects */
+            projects: number;
+            /** Projects By Status */
+            projects_by_status: {
+                [key: string]: number;
+            };
+            /** Sites */
+            sites: number;
+            /** Tasks Submitted */
+            tasks_submitted: number;
+            /** Visits Done */
+            visits_done: number;
+            /** Work Seconds */
+            work_seconds: number;
+        };
+        /**
+         * CompanyJobRowOut
+         * @description Raw data: one job of the company's projects.
+         */
+        CompanyJobRowOut: {
+            /** Crew Pay */
+            crew_pay: string;
+            /** First Visit At */
+            first_visit_at: string | null;
+            /** Job Id */
+            job_id: number;
+            job_status: components["schemas"]["JobStatus"];
+            /** Job Title */
+            job_title: string;
+            job_type: components["schemas"]["JobType"];
+            /** Last Visit At */
+            last_visit_at: string | null;
+            /** Project Name */
+            project_name: string;
+            /** Project Reference */
+            project_reference: string;
+            /** Site Name */
+            site_name: string;
+            /** Tasks Submitted */
+            tasks_submitted: number;
+            /** Visits Done */
+            visits_done: number;
+            /** Visits Planned */
+            visits_planned: number;
+            /** Work Seconds */
+            work_seconds: number;
+        };
+        /** CompanyMonthOut */
+        CompanyMonthOut: {
+            /** Crew Pay */
+            crew_pay: string;
+            /** Month */
+            month: string;
+            /** Tasks Submitted */
+            tasks_submitted: number;
+            /** Visits Done */
+            visits_done: number;
+            /** Work Seconds */
+            work_seconds: number;
+        };
         /** CompanyOut */
         CompanyOut: {
             /** Address */
@@ -1289,6 +1489,12 @@ export interface components {
          * @enum {string}
          */
         JobType: "SURVEY" | "INSTALLATION" | "INSPECTION" | "MAINTENANCE" | "DISMANTLING";
+        /** JobTypeCountOut */
+        JobTypeCountOut: {
+            job_type: components["schemas"]["JobType"];
+            /** Jobs */
+            jobs: number;
+        };
         /** LocationCheckIn */
         LocationCheckIn: {
             /** Accuracy M */
@@ -1431,6 +1637,19 @@ export interface components {
             note: string | null;
             /** Quantity */
             quantity: string;
+            /** Unit */
+            unit: string;
+        };
+        /** MaterialTotalOut */
+        MaterialTotalOut: {
+            /** Damaged Or Lost */
+            damaged_or_lost: string;
+            /** Installed */
+            installed: string;
+            /** Item Name */
+            item_name: string;
+            /** Retrieved */
+            retrieved: string;
             /** Unit */
             unit: string;
         };
@@ -2082,6 +2301,91 @@ export interface components {
             /** Id */
             id: number;
         };
+        /**
+         * WorkerInsightsOut
+         * @description Totals and averages for the manager's "Info" view of a worker (§13a).
+         */
+        WorkerInsightsOut: {
+            /** Approval Rate */
+            approval_rate: number;
+            /** Approved Pay */
+            approved_pay: string;
+            /** Break Seconds */
+            break_seconds: number;
+            /**
+             * Currency
+             * @default AMD
+             */
+            currency: string;
+            /** Employee Code */
+            employee_code: string;
+            /** First Task At */
+            first_task_at: string | null;
+            /** Flag Rate */
+            flag_rate: number;
+            /** Flagged Tasks */
+            flagged_tasks: number;
+            /** Last Task At */
+            last_task_at: string | null;
+            /** Mean Break Seconds Per Task */
+            mean_break_seconds_per_task: number;
+            /** Mean Monthly Pay */
+            mean_monthly_pay: string;
+            /** Mean Pay Per Task */
+            mean_pay_per_task: string;
+            /** Mean Tasks Per Month */
+            mean_tasks_per_month: number;
+            /** Mean Work Seconds Per Task */
+            mean_work_seconds_per_task: number;
+            /** Months */
+            months: components["schemas"]["WorkerMonthOut"][];
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date
+             */
+            period_start: string;
+            /** Tasks Approved */
+            tasks_approved: number;
+            /** Tasks Assigned */
+            tasks_assigned: number;
+            /** Tasks Cancelled */
+            tasks_cancelled: number;
+            /** Tasks Submitted */
+            tasks_submitted: number;
+            /** Work Seconds */
+            work_seconds: number;
+            /** Worker Id */
+            worker_id: number;
+            /** Worker Name */
+            worker_name: string;
+        };
+        /**
+         * WorkerMonthOut
+         * @description One Yerevan month of a worker's tasks (by the visit's start).
+         */
+        WorkerMonthOut: {
+            /** Approved Pay */
+            approved_pay: string;
+            /** Break Seconds */
+            break_seconds: number;
+            /** Flagged Tasks */
+            flagged_tasks: number;
+            /** Month */
+            month: string;
+            /** Tasks Approved */
+            tasks_approved: number;
+            /** Tasks Assigned */
+            tasks_assigned: number;
+            /** Tasks Submitted */
+            tasks_submitted: number;
+            /** Work Seconds */
+            work_seconds: number;
+        };
         /** WorkerOut */
         WorkerOut: {
             /** Email */
@@ -2539,6 +2843,210 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    company_insights_api_v1_insights_companies__company_id__get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyInsightsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    company_jobs_api_v1_insights_companies__company_id__jobs_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyJobRowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    company_jobs_csv_api_v1_insights_companies__company_id__jobs_csv_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    worker_insights_api_v1_insights_workers__worker_id__get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                worker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkerInsightsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    worker_tasks_api_v1_insights_workers__worker_id__tasks_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                worker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimesheetRowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    worker_tasks_csv_api_v1_insights_workers__worker_id__tasks_csv_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                worker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

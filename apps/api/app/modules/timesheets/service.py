@@ -54,7 +54,7 @@ def _conflict(code: str, message: str) -> AppError:
 # --- totals ------------------------------------------------------------------------
 
 
-async def _totals(session: AsyncSession, ids: list[int]) -> dict[int, tuple[int, int]]:
+async def entry_totals(session: AsyncSession, ids: list[int]) -> dict[int, tuple[int, int]]:
     """(work, break) seconds per assignment from its entries; open ones until now."""
     if not ids:
         return {}
@@ -138,11 +138,12 @@ async def list_timesheets(
     worker_id: int | None,
     flagged: bool | None,
     reviewed: bool | None,
+    statuses: tuple[AssignmentStatus, ...] = _REVIEWABLE,
 ) -> list[TimesheetRowOut]:
     lower = func.lower(VisitAssignment.period)
     stmt = (
         _rows_query()
-        .where(VisitAssignment.status.in_(_REVIEWABLE), lower >= start, lower < end)
+        .where(VisitAssignment.status.in_(statuses), lower >= start, lower < end)
         .order_by(lower, User.last_name)
     )
     if worker_id is not None:
@@ -157,7 +158,7 @@ async def list_timesheets(
             else VisitAssignment.reviewed_at.is_(None)
         )
     rows = list(await session.execute(stmt))
-    totals = await _totals(session, [r[0].id for r in rows])
+    totals = await entry_totals(session, [r[0].id for r in rows])
     reviewers = await _reviewer_names(session, {r[0].reviewed_by for r in rows if r[0].reviewed_by})
     return [
         TimesheetRowOut(
@@ -182,7 +183,7 @@ async def _get(session: AsyncSession, assignment_id: int, *, lock: bool = False)
 
 async def detail(session: AsyncSession, storage: Storage, assignment_id: int) -> TimesheetDetailOut:
     a, visit, job, site, worker, user = await _get(session, assignment_id)
-    totals = (await _totals(session, [a.id])).get(a.id, (0, 0))
+    totals = (await entry_totals(session, [a.id])).get(a.id, (0, 0))
     reviewers = await _reviewer_names(session, {a.reviewed_by} if a.reviewed_by else set())
     settings = await get_operational(session)
     completion = await session.scalar(
@@ -284,7 +285,7 @@ async def approve(session: AsyncSession, assignment_id: int, manager: User) -> N
         return  # idempotent
     if a.status is not AssignmentStatus.SUBMITTED:
         raise _conflict("NOT_SUBMITTED", "Only submitted tasks can be approved.")
-    work, brk = (await _totals(session, [a.id])).get(a.id, (0, 0))
+    work, brk = (await entry_totals(session, [a.id])).get(a.id, (0, 0))
     a.reviewed_by = manager.id
     a.reviewed_at = utcnow()
     audit.record(
@@ -328,7 +329,7 @@ async def adjust(session: AsyncSession, assignment_id: int, data: AdjustIn, mana
         select(AssignmentCompletion).where(AssignmentCompletion.assignment_id == a.id)
     )
     if completion is not None:
-        work, brk = (await _totals(session, [a.id])).get(a.id, (0, 0))
+        work, brk = (await entry_totals(session, [a.id])).get(a.id, (0, 0))
         completion.work_seconds, completion.break_seconds = work, brk
     audit.record(
         session,

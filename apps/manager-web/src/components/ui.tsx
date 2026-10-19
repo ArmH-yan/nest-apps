@@ -74,6 +74,17 @@ export function StatusBadge({ status, label }: { status: string; label: string }
   return <span className={`badge ${TONES[status] ?? "neutral"}`}>{label}</span>;
 }
 
+/** One number on an Info page (worker / company statistics). */
+export function StatTile({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+  return (
+    <div className="stat">
+      <div className="muted small">{label}</div>
+      <div className="value">{value}</div>
+      {hint && <div className="muted small">{hint}</div>}
+    </div>
+  );
+}
+
 /** Review flags set by the server (OUTSIDE_GEOFENCE, LATE_SYNC, …; ARCHITECTURE §19). */
 export function Flags({ flags }: { flags: string[] }) {
   const { t } = useI18n();

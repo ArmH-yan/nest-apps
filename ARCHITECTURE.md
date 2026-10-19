@@ -990,6 +990,45 @@ As built (2026-10-18, `app/modules/timesheets`):
 - Photos on the detail page use short-lived presigned GET URLs (`Storage.presign_get`).
 - The map reuses the site map and adds green (on site or accepted) and red (outside) dots for the checks.
 
+## 13a. Info views (worker and company statistics)
+
+As built (2026-10-19, `app/modules/insights`, read-only, MANAGER/ADMIN).
+
+These pages are linked from the **Info** button on each row of Workers and Companies. They take a window of Yerevan dates (`from`/`to`, inclusive). The default window is the last 12 months including the current one. Each page has a month-by-month table, a **Raw data** table and **Export CSV** (UTF-8 with BOM).
+
+**Worker** (`/workers/{id}`):
+- Tasks assigned, submitted, approved and cancelled.
+- Approved pay.
+- Averages:
+  - pay per month and tasks per month, counted only over the months since the worker's first task in the window
+  - pay per approved task
+  - work and break time per submitted task
+- Total work time, approval rate, flag rate, and the first and last task.
+- Raw data: every task in any status, with the timesheet row fields and an **Explore** link to the timesheet.
+
+**Company** (`/companies/{id}`):
+- Projects (by status), sites, and jobs by type.
+- Visits done and tasks submitted.
+- Worker hours, and the average per visit (over visits with submitted work).
+- **Crew pay**: the pay of submitted tasks, i.e. NEST's labour cost.
+- Materials installed, retrieved, and damaged or lost.
+- The first and last visit.
+- Raw data: one row per job, with visits, dates, hours and crew pay.
+- Revenue per company comes with quotes (Phase 5).
+
+Everything is computed from the operational tables per request, which is fine at this size. Cross-cutting reports stay in Metabase (§27).
+
+```text
+GET /insights/workers/{id}?from=&to=          totals, averages, months
+GET /insights/workers/{id}/tasks?from=&to=    raw tasks (TimesheetRowOut, all statuses)
+GET /insights/workers/{id}/tasks.csv
+GET /insights/companies/{id}?from=&to=
+GET /insights/companies/{id}/jobs?from=&to=   raw jobs
+GET /insights/companies/{id}/jobs.csv
+```
+
+In the timesheet list, the job title is no longer a link. Each row has an **Explore** button (under **Approve** when that is shown) that opens the timesheet.
+
 ---
 
 # 14. Scheduling

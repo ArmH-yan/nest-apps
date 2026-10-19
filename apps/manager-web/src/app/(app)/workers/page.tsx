@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { Empty, ErrorBox, Field, Loading, Modal, PageHeader } from "@/components/ui";
@@ -80,6 +81,9 @@ export default function WorkersPage() {
                   </td>
                   <td>
                     <div className="row" style={{ justifyContent: "flex-end" }}>
+                      <Link href={`/workers/${w.id}`} className="btn">
+                        {t("info.button")}
+                      </Link>
                       <button className="btn" onClick={() => setResetting(w)}>
                         {t("workers.resetPassword")}
                       </button>

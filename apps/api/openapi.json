@@ -198,6 +198,264 @@
         "title": "CompanyIn",
         "type": "object"
       },
+      "CompanyInsightsOut": {
+        "description": "What NEST did for one customer company in the window (§13a).",
+        "properties": {
+          "company_id": {
+            "title": "Company Id",
+            "type": "integer"
+          },
+          "company_name": {
+            "title": "Company Name",
+            "type": "string"
+          },
+          "crew_pay": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Crew Pay",
+            "type": "string"
+          },
+          "currency": {
+            "default": "AMD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "first_visit_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Visit At"
+          },
+          "jobs_by_type": {
+            "items": {
+              "$ref": "#/components/schemas/JobTypeCountOut"
+            },
+            "title": "Jobs By Type",
+            "type": "array"
+          },
+          "last_visit_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Visit At"
+          },
+          "materials": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialTotalOut"
+            },
+            "title": "Materials",
+            "type": "array"
+          },
+          "mean_work_seconds_per_visit": {
+            "title": "Mean Work Seconds Per Visit",
+            "type": "integer"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/CompanyMonthOut"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "period_end": {
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "projects": {
+            "title": "Projects",
+            "type": "integer"
+          },
+          "projects_by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Projects By Status",
+            "type": "object"
+          },
+          "sites": {
+            "title": "Sites",
+            "type": "integer"
+          },
+          "tasks_submitted": {
+            "title": "Tasks Submitted",
+            "type": "integer"
+          },
+          "visits_done": {
+            "title": "Visits Done",
+            "type": "integer"
+          },
+          "work_seconds": {
+            "title": "Work Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "company_id",
+          "company_name",
+          "period_start",
+          "period_end",
+          "months",
+          "projects",
+          "projects_by_status",
+          "sites",
+          "jobs_by_type",
+          "visits_done",
+          "tasks_submitted",
+          "work_seconds",
+          "crew_pay",
+          "mean_work_seconds_per_visit",
+          "first_visit_at",
+          "last_visit_at",
+          "materials"
+        ],
+        "title": "CompanyInsightsOut",
+        "type": "object"
+      },
+      "CompanyJobRowOut": {
+        "description": "Raw data: one job of the company's projects.",
+        "properties": {
+          "crew_pay": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Crew Pay",
+            "type": "string"
+          },
+          "first_visit_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Visit At"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "integer"
+          },
+          "job_status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "job_title": {
+            "title": "Job Title",
+            "type": "string"
+          },
+          "job_type": {
+            "$ref": "#/components/schemas/JobType"
+          },
+          "last_visit_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Visit At"
+          },
+          "project_name": {
+            "title": "Project Name",
+            "type": "string"
+          },
+          "project_reference": {
+            "title": "Project Reference",
+            "type": "string"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
+          },
+          "tasks_submitted": {
+            "title": "Tasks Submitted",
+            "type": "integer"
+          },
+          "visits_done": {
+            "title": "Visits Done",
+            "type": "integer"
+          },
+          "visits_planned": {
+            "title": "Visits Planned",
+            "type": "integer"
+          },
+          "work_seconds": {
+            "title": "Work Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "job_id",
+          "job_title",
+          "job_type",
+          "job_status",
+          "project_reference",
+          "project_name",
+          "site_name",
+          "visits_done",
+          "visits_planned",
+          "first_visit_at",
+          "last_visit_at",
+          "tasks_submitted",
+          "work_seconds",
+          "crew_pay"
+        ],
+        "title": "CompanyJobRowOut",
+        "type": "object"
+      },
+      "CompanyMonthOut": {
+        "properties": {
+          "crew_pay": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Crew Pay",
+            "type": "string"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "tasks_submitted": {
+            "title": "Tasks Submitted",
+            "type": "integer"
+          },
+          "visits_done": {
+            "title": "Visits Done",
+            "type": "integer"
+          },
+          "work_seconds": {
+            "title": "Work Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "visits_done",
+          "tasks_submitted",
+          "work_seconds",
+          "crew_pay"
+        ],
+        "title": "CompanyMonthOut",
+        "type": "object"
+      },
       "CompanyOut": {
         "properties": {
           "address": {
@@ -1394,6 +1652,23 @@
         "title": "JobType",
         "type": "string"
       },
+      "JobTypeCountOut": {
+        "properties": {
+          "job_type": {
+            "$ref": "#/components/schemas/JobType"
+          },
+          "jobs": {
+            "title": "Jobs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "job_type",
+          "jobs"
+        ],
+        "title": "JobTypeCountOut",
+        "type": "object"
+      },
       "LocationCheckIn": {
         "properties": {
           "accuracy_m": {
@@ -1792,6 +2067,42 @@
           "note"
         ],
         "title": "MaterialRowOut",
+        "type": "object"
+      },
+      "MaterialTotalOut": {
+        "properties": {
+          "damaged_or_lost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Damaged Or Lost",
+            "type": "string"
+          },
+          "installed": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Installed",
+            "type": "string"
+          },
+          "item_name": {
+            "title": "Item Name",
+            "type": "string"
+          },
+          "retrieved": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Retrieved",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_name",
+          "unit",
+          "installed",
+          "retrieved",
+          "damaged_or_lost"
+        ],
+        "title": "MaterialTotalOut",
         "type": "object"
       },
       "MeResponse": {
@@ -3777,6 +4088,209 @@
         "title": "WorkerInfo",
         "type": "object"
       },
+      "WorkerInsightsOut": {
+        "description": "Totals and averages for the manager's \"Info\" view of a worker (§13a).",
+        "properties": {
+          "approval_rate": {
+            "title": "Approval Rate",
+            "type": "number"
+          },
+          "approved_pay": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Approved Pay",
+            "type": "string"
+          },
+          "break_seconds": {
+            "title": "Break Seconds",
+            "type": "integer"
+          },
+          "currency": {
+            "default": "AMD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "employee_code": {
+            "title": "Employee Code",
+            "type": "string"
+          },
+          "first_task_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Task At"
+          },
+          "flag_rate": {
+            "title": "Flag Rate",
+            "type": "number"
+          },
+          "flagged_tasks": {
+            "title": "Flagged Tasks",
+            "type": "integer"
+          },
+          "last_task_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Task At"
+          },
+          "mean_break_seconds_per_task": {
+            "title": "Mean Break Seconds Per Task",
+            "type": "integer"
+          },
+          "mean_monthly_pay": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Mean Monthly Pay",
+            "type": "string"
+          },
+          "mean_pay_per_task": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Mean Pay Per Task",
+            "type": "string"
+          },
+          "mean_tasks_per_month": {
+            "title": "Mean Tasks Per Month",
+            "type": "number"
+          },
+          "mean_work_seconds_per_task": {
+            "title": "Mean Work Seconds Per Task",
+            "type": "integer"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/WorkerMonthOut"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "period_end": {
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "tasks_approved": {
+            "title": "Tasks Approved",
+            "type": "integer"
+          },
+          "tasks_assigned": {
+            "title": "Tasks Assigned",
+            "type": "integer"
+          },
+          "tasks_cancelled": {
+            "title": "Tasks Cancelled",
+            "type": "integer"
+          },
+          "tasks_submitted": {
+            "title": "Tasks Submitted",
+            "type": "integer"
+          },
+          "work_seconds": {
+            "title": "Work Seconds",
+            "type": "integer"
+          },
+          "worker_id": {
+            "title": "Worker Id",
+            "type": "integer"
+          },
+          "worker_name": {
+            "title": "Worker Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "worker_id",
+          "worker_name",
+          "employee_code",
+          "period_start",
+          "period_end",
+          "months",
+          "tasks_assigned",
+          "tasks_submitted",
+          "tasks_approved",
+          "tasks_cancelled",
+          "flagged_tasks",
+          "approved_pay",
+          "work_seconds",
+          "break_seconds",
+          "mean_monthly_pay",
+          "mean_tasks_per_month",
+          "mean_pay_per_task",
+          "mean_work_seconds_per_task",
+          "mean_break_seconds_per_task",
+          "approval_rate",
+          "flag_rate",
+          "first_task_at",
+          "last_task_at"
+        ],
+        "title": "WorkerInsightsOut",
+        "type": "object"
+      },
+      "WorkerMonthOut": {
+        "description": "One Yerevan month of a worker's tasks (by the visit's start).",
+        "properties": {
+          "approved_pay": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Approved Pay",
+            "type": "string"
+          },
+          "break_seconds": {
+            "title": "Break Seconds",
+            "type": "integer"
+          },
+          "flagged_tasks": {
+            "title": "Flagged Tasks",
+            "type": "integer"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "tasks_approved": {
+            "title": "Tasks Approved",
+            "type": "integer"
+          },
+          "tasks_assigned": {
+            "title": "Tasks Assigned",
+            "type": "integer"
+          },
+          "tasks_submitted": {
+            "title": "Tasks Submitted",
+            "type": "integer"
+          },
+          "work_seconds": {
+            "title": "Work Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "tasks_assigned",
+          "tasks_submitted",
+          "tasks_approved",
+          "approved_pay",
+          "work_seconds",
+          "break_seconds",
+          "flagged_tasks"
+        ],
+        "title": "WorkerMonthOut",
+        "type": "object"
+      },
       "WorkerOut": {
         "properties": {
           "email": {
@@ -4594,6 +5108,496 @@
         "summary": "Update Contact",
         "tags": [
           "companies"
+        ]
+      }
+    },
+    "/api/v1/insights/companies/{company_id}": {
+      "get": {
+        "operationId": "company_insights_api_v1_insights_companies__company_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "company_id",
+            "required": true,
+            "schema": {
+              "title": "Company Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyInsightsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Company Insights",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/api/v1/insights/companies/{company_id}/jobs": {
+      "get": {
+        "operationId": "company_jobs_api_v1_insights_companies__company_id__jobs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "company_id",
+            "required": true,
+            "schema": {
+              "title": "Company Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CompanyJobRowOut"
+                  },
+                  "title": "Response Company Jobs Api V1 Insights Companies  Company Id  Jobs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Company Jobs",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/api/v1/insights/companies/{company_id}/jobs.csv": {
+      "get": {
+        "operationId": "company_jobs_csv_api_v1_insights_companies__company_id__jobs_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "company_id",
+            "required": true,
+            "schema": {
+              "title": "Company Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Company Jobs Csv",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/api/v1/insights/workers/{worker_id}": {
+      "get": {
+        "operationId": "worker_insights_api_v1_insights_workers__worker_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "title": "Worker Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerInsightsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Worker Insights",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/api/v1/insights/workers/{worker_id}/tasks": {
+      "get": {
+        "operationId": "worker_tasks_api_v1_insights_workers__worker_id__tasks_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "title": "Worker Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TimesheetRowOut"
+                  },
+                  "title": "Response Worker Tasks Api V1 Insights Workers  Worker Id  Tasks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Worker Tasks",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/api/v1/insights/workers/{worker_id}/tasks.csv": {
+      "get": {
+        "operationId": "worker_tasks_csv_api_v1_insights_workers__worker_id__tasks_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "title": "Worker Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Worker Tasks Csv",
+        "tags": [
+          "insights"
         ]
       }
     },

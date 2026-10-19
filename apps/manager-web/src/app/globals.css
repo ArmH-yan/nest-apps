@@ -379,6 +379,38 @@ dialog.modal::backdrop {
   display: block;
 }
 
+/* stacked row buttons (timesheets: Approve above Explore) */
+.actions {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.stat .value {
+  font-size: 22px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
 .flags {
   display: flex;
   flex-wrap: wrap;

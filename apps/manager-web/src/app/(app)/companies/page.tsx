@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { Empty, ErrorBox, Field, Loading, Modal, PageHeader } from "@/components/ui";
@@ -43,6 +44,7 @@ export default function CompaniesPage() {
                 <th>{t("companies.taxId")}</th>
                 <th>{t("common.phone")}</th>
                 <th>{t("common.address")}</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -52,6 +54,11 @@ export default function CompaniesPage() {
                   <td>{c.tax_id ?? t("common.none")}</td>
                   <td>{c.phone ?? t("common.none")}</td>
                   <td>{c.address ?? t("common.none")}</td>
+                  <td style={{ textAlign: "right" }}>
+                    <Link href={`/companies/${c.id}`} className="btn">
+                      {t("info.button")}
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

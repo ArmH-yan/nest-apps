@@ -172,7 +172,7 @@ export default function TimesheetsPage() {
                     </div>
                   </td>
                   <td>
-                    <Link href={`/timesheets/${r.assignment_id}`}>{r.job_title}</Link>
+                    {r.job_title}
                     <div className="muted small">{r.site_name}</div>
                   </td>
                   <td>{formatDuration(r.work_seconds)}</td>
@@ -192,20 +192,21 @@ export default function TimesheetsPage() {
                     )}
                   </td>
                   <td style={{ textAlign: "right" }}>
-                    {/* flagged tasks are approved from the detail page, after a look */}
-                    {!r.reviewed_at && r.status === "SUBMITTED" && r.review_flags.length === 0 ? (
-                      <button
-                        className="btn primary"
-                        disabled={busy === r.assignment_id}
-                        onClick={() => void approve(r)}
-                      >
-                        {t("ts.approve")}
-                      </button>
-                    ) : (
+                    <div className="actions">
+                      {/* flagged tasks are approved from the detail page, after a look */}
+                      {!r.reviewed_at && r.status === "SUBMITTED" && r.review_flags.length === 0 && (
+                        <button
+                          className="btn primary"
+                          disabled={busy === r.assignment_id}
+                          onClick={() => void approve(r)}
+                        >
+                          {t("ts.approve")}
+                        </button>
+                      )}
                       <Link href={`/timesheets/${r.assignment_id}`} className="btn">
-                        →
+                        {t("ts.explore")}
                       </Link>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
