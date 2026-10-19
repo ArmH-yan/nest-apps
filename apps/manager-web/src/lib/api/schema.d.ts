@@ -411,6 +411,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/planning/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Planning Projects
+         * @description Yerevan dates, both inclusive; default: a week back to 12 weeks ahead.
+         */
+        get: operations["planning_projects_api_v1_planning_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -1727,6 +1747,68 @@ export interface components {
             taken_at: string | null;
             /** Url */
             url: string;
+        };
+        /** PlanningJobOut */
+        PlanningJobOut: {
+            /** Id */
+            id: number;
+            job_type: components["schemas"]["JobType"];
+            status: components["schemas"]["JobStatus"];
+            /** Title */
+            title: string;
+            /** Visits */
+            visits: components["schemas"]["PlanningVisitOut"][];
+        };
+        /**
+         * PlanningProjectOut
+         * @description One row of the planning timeline (ARCHITECTURE §14a).
+         */
+        PlanningProjectOut: {
+            /** Company Name */
+            company_name: string | null;
+            /** Dismantle Overdue */
+            dismantle_overdue: boolean;
+            /** Dismantle Soon */
+            dismantle_soon: boolean;
+            /** Expected Dismantle Date */
+            expected_dismantle_date: string | null;
+            /** Expected Install Date */
+            expected_install_date: string | null;
+            /** Id */
+            id: number;
+            /** Jobs */
+            jobs: components["schemas"]["PlanningJobOut"][];
+            /** Name */
+            name: string;
+            /** On Site From */
+            on_site_from: string | null;
+            /** On Site To */
+            on_site_to: string | null;
+            /** Reference */
+            reference: string;
+            /** Site Name */
+            site_name: string;
+            status: components["schemas"]["ProjectStatus"];
+            /** Unstaffed Visits */
+            unstaffed_visits: number;
+        };
+        /** PlanningVisitOut */
+        PlanningVisitOut: {
+            /** Crew */
+            crew: string[];
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Id */
+            id: number;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            status: components["schemas"]["VisitStatus"];
         };
         /** PresignIn */
         PresignIn: {
@@ -3312,6 +3394,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    planning_projects_api_v1_planning_projects_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningProjectOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

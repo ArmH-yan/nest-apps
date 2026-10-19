@@ -11,6 +11,7 @@ import { useSession } from "@/lib/session";
 
 const NAV: { href: string; label: MessageKey }[] = [
   { href: "/", label: "nav.dashboard" },
+  { href: "/planning", label: "nav.planning" },
   { href: "/jobs", label: "nav.jobs" },
   { href: "/timesheets", label: "nav.timesheets" },
   { href: "/projects", label: "nav.projects" },

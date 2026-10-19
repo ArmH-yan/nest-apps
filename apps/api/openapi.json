@@ -2334,6 +2334,197 @@
         "title": "PhotoOut",
         "type": "object"
       },
+      "PlanningJobOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "job_type": {
+            "$ref": "#/components/schemas/JobType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "visits": {
+            "items": {
+              "$ref": "#/components/schemas/PlanningVisitOut"
+            },
+            "title": "Visits",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "job_type",
+          "status",
+          "visits"
+        ],
+        "title": "PlanningJobOut",
+        "type": "object"
+      },
+      "PlanningProjectOut": {
+        "description": "One row of the planning timeline (ARCHITECTURE §14a).",
+        "properties": {
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
+          "dismantle_overdue": {
+            "title": "Dismantle Overdue",
+            "type": "boolean"
+          },
+          "dismantle_soon": {
+            "title": "Dismantle Soon",
+            "type": "boolean"
+          },
+          "expected_dismantle_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Dismantle Date"
+          },
+          "expected_install_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Install Date"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/PlanningJobOut"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "on_site_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Site From"
+          },
+          "on_site_to": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Site To"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "unstaffed_visits": {
+            "title": "Unstaffed Visits",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "name",
+          "status",
+          "company_name",
+          "site_name",
+          "expected_install_date",
+          "expected_dismantle_date",
+          "on_site_from",
+          "on_site_to",
+          "dismantle_overdue",
+          "dismantle_soon",
+          "unstaffed_visits",
+          "jobs"
+        ],
+        "title": "PlanningProjectOut",
+        "type": "object"
+      },
+      "PlanningVisitOut": {
+        "properties": {
+          "crew": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Crew",
+            "type": "array"
+          },
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VisitStatus"
+          }
+        },
+        "required": [
+          "id",
+          "starts_at",
+          "ends_at",
+          "status",
+          "crew"
+        ],
+        "title": "PlanningVisitOut",
+        "type": "object"
+      },
       "PresignIn": {
         "properties": {
           "kind": {
@@ -6032,6 +6223,83 @@
         "summary": "Me",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/api/v1/planning/projects": {
+      "get": {
+        "description": "Yerevan dates, both inclusive; default: a week back to 12 weeks ahead.",
+        "operationId": "planning_projects_api_v1_planning_projects_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlanningProjectOut"
+                  },
+                  "title": "Response Planning Projects Api V1 Planning Projects Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Planning Projects",
+        "tags": [
+          "planning"
         ]
       }
     },

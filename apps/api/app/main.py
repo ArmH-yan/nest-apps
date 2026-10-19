@@ -18,6 +18,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.companies.router import router as companies_router
 from app.modules.health.router import router as health_router
 from app.modules.insights.router import router as insights_router
+from app.modules.planning.router import router as planning_router
 from app.modules.projects.router import router as projects_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.settings.router import router as settings_router
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
     api_v1.include_router(users_router)
     api_v1.include_router(companies_router)
     api_v1.include_router(insights_router)
+    api_v1.include_router(planning_router)
     api_v1.include_router(sites_router)
     api_v1.include_router(projects_router)
     api_v1.include_router(scheduling_router)

@@ -41,3 +41,13 @@ async def test_seed_demo_gives_arman_a_working_day(
     assert len(history["items"]) == 2
     notifications = (await client.get("/api/v1/worker/notifications", headers=arman)).json()
     assert len(notifications["items"]) == 4, "one TASK_ASSIGNED per scheduled task"
+
+    manager_login = await client.post(
+        "/api/v1/auth/login", json={"phone": "+37491000001", "password": PASSWORD}
+    )
+    manager = {"Authorization": f"Bearer {manager_login.json()['access_token']}"}
+    plan = (await client.get("/api/v1/planning/projects", headers=manager)).json()
+    flags = {p["name"]: (p["dismantle_overdue"], p["dismantle_soon"]) for p in plan}
+    assert flags["Ajapnyak Heights"] == (True, False)
+    assert flags["Arabkir Business Center"] == (False, True)
+    assert len(plan) == 5

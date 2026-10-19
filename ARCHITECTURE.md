@@ -936,7 +936,8 @@ A dedicated Next.js app (`apps/manager-web`), built for desktop.
 - Times are shown in Asia/Yerevan as `18.10.2026 09:00`; visit times typed by a manager are sent with `+04:00`. Money is shown from the API's decimal strings (`20 000 ֏`).
 - Map tiles come from tile.openstreetmap.org (fine for a handful of managers; switch to a tile provider or self-hosted tiles if usage grows).
 - **Timesheets (2026-10-18)**: list (`/timesheets`; filters for date range, worker and "waiting for approval / flagged / approved / all", kept in the URL), and a detail page (`/timesheets/{assignment_id}`). See "Timesheets" below.
-- Next: the planning timeline (Gantt, §14a), worker time off, push + reminders.
+- **Planning timeline (2026-10-19)**: `/planning`, by project and by worker (§14a).
+- Next: worker time off, push + reminders.
 
 ## Main navigation
 
@@ -1070,9 +1071,9 @@ Travel time, automatic scheduling and route optimization come later.
 
 ---
 
-# 14a. Planning Timeline (Gantt chart) — plan
+# 14a. Planning Timeline (Gantt chart)
 
-Status: **planned (2026-10-18)**, Phase 3, next after timesheets. It replaces the separate "Calendar" screen: the views in §14 become two modes of one timeline screen (`/planning`).
+Status: **v1 built (2026-10-19)**: read-only, both modes, all three zooms ("As built" at the end of this section). v1.1 (dragging a visit) is next when needed. It replaces the separate "Calendar" screen: the views in §14 become two modes of one timeline screen (`/planning`).
 
 ### Why
 
@@ -1125,7 +1126,7 @@ P-2026-0005 Komitas          [SURV]  ┄┄┄┄ expected ┄┄┄┄
   - its jobs
   - non-cancelled visits, each with crew count and names
   - planned dates and the derived actual on-site period
-- It loads everything in one round of queries (no N+1) and lives in the `scheduling` module's service.
+- It loads everything in one round of queries (no N+1) and lives in its own read-only module, `app/modules/planning`.
 - Mode 2 reuses `GET /schedule?from=&to=&worker_id=`.
 - No schema change: everything comes from `projects`, `jobs`, `job_visits` and `visit_assignments`.
 
@@ -1138,6 +1139,28 @@ P-2026-0005 Komitas          [SURV]  ┄┄┄┄ expected ┄┄┄┄
 
 - API: the window filter (a visit straddling the edge is included), the derived on-site period, overdue detection, and authorization (a worker gets 403).
 - Web: typecheck, lint and build, and a manual check in the browser with the demo seed (the seed gets a long-running INSTALLED project with monthly inspections and an expected dismantle date).
+
+### As built (2026-10-19)
+
+- `GET /planning/projects?from=&to=`: Yerevan dates, both inclusive. The default window is a week back to 12 weeks ahead; at most 400 days, otherwise 422.
+- A project is shown when any of these holds:
+  - it has a non-cancelled visit in the window
+  - its planned period overlaps the window
+  - its on-site period overlaps the window
+- The on-site period starts at the first DONE installation visit. It ends at the last DONE dismantling visit, and only once the project is DISMANTLED or CLOSED; until then it runs to now.
+- `dismantle_soon` covers today and the next 7 days. `unstaffed_visits` counts PLANNED visits in the window that have no crew.
+- Rows are sorted by their earliest date.
+- The demo seed sets planned dates on every project and adds past DONE installations (Building D 50 days ago, Building E 60 days ago) plus a past inspection:
+  - Building D's dismantling is overdue
+  - Building C's is due within a week
+  - Building E comes down today
+- Web (`/planning`, `src/components/timeline.tsx`):
+  - mode, zoom and start date are kept in the URL; ← / → move half a window; "Today" resets
+  - project rows collapse
+  - in the 2-week zoom, a visit shows its crew size and weekends are shaded
+  - visits on the worker rows are dimmed once submitted
+  - colours per job type are CSS tokens (`--jt-*`, with light and dark values)
+- The app shell's content column is now `minmax(0, 1fr)`, so the wide timeline scrolls inside its card instead of stretching the page.
 
 ---
 
@@ -1375,6 +1398,7 @@ PATCH  /visits/{id}
 DELETE /visits/{id}
 PUT    /visits/{id}/crew
 GET    /schedule?from=&to=&worker_id=
+GET    /planning/projects?from=&to=      planning timeline (§14a)
 ```
 
 ### Timesheets
@@ -2030,7 +2054,7 @@ Seed script; first real field test with 1–2 workers
 
 ## Phase 3 — Manager web app
 
-Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). **Timesheets done (2026-10-18)**: review, approve, adjust, location override and CSV, both API and web (§13 "Timesheets"). Next: the planning timeline (Gantt, §14a), then time off, then FCM push + reminders.
+Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). **Timesheets done (2026-10-18)**: review, approve, adjust, location override and CSV, both API and web (§13 "Timesheets"). **Info views (2026-10-19)**: worker and company statistics (§13a). **Planning timeline v1 done (2026-10-19)** (§14a). Next: worker time off (it also shows on the timeline's worker rows), then FCM push + reminders.
 
 ```text
 Login, dashboard, jobs/visits, crews, workers + time off

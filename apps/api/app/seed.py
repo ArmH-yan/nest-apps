@@ -201,6 +201,32 @@ async def _scheduled(
     return job
 
 
+async def _done_job(
+    session: AsyncSession,
+    people: _People,
+    project: Project,
+    job_type: JobType,
+    title: str,
+    days_ago: list[int],
+) -> None:
+    """A finished job with DONE visits and no crew rows, so the planning timeline
+    (§14a) has history: installations long ago, past inspections."""
+    job = Job(
+        project_id=project.id,
+        site_id=project.site_id,
+        job_type=job_type,
+        status=JobStatus.COMPLETED,
+        title=title,
+        created_by=people.manager.id,
+    )
+    session.add(job)
+    await session.flush()
+    for d in days_ago:
+        period = Range(_yerevan(-d, 9), _yerevan(-d, 17), bounds="[)")
+        session.add(JobVisit(job_id=job.id, period=period, status=VisitStatus.DONE))
+    await session.flush()
+
+
 async def _approved_past_task(
     session: AsyncSession,
     people: _People,
@@ -376,6 +402,28 @@ async def seed_demo(session: AsyncSession, *, reset: bool) -> list[str]:
     )
     nor_nork = await _project(
         session, 5, "Nor Nork Tower", site_e, renshin, ProjectStatus.INSTALLED
+    )
+
+    # Planned periods for the planning timeline (§14a): Building D's dismantling is
+    # overdue, Building C's is due within a week, Building E comes down today.
+    today = datetime.now(YEREVAN).date()
+    for project, install, dismantle in [
+        (davtashen, 0, 120),
+        (komitas, 1, 75),
+        (arabkir_bc, -3, 5),
+        (ajapnyak, -50, -4),
+        (nor_nork, -60, 0),
+    ]:
+        project.expected_install_date = today + timedelta(days=install)
+        project.expected_dismantle_date = today + timedelta(days=dismantle)
+    await _done_job(
+        session, people, ajapnyak, JobType.INSTALLATION, "Install Safety Net - Building D", [50, 49]
+    )
+    await _done_job(
+        session, people, ajapnyak, JobType.INSPECTION, "Safety Net Inspection - Building D", [20]
+    )
+    await _done_job(
+        session, people, nor_nork, JobType.INSTALLATION, "Install Safety Net - Building E", [60]
     )
 
     # Nets already on Building E: the dismantling crew's expected list.

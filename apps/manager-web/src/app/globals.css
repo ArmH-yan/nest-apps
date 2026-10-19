@@ -18,6 +18,12 @@
   --info: #1a73e8;
   --radius: 10px;
   --shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 1px 3px rgb(0 0 0 / 8%);
+  /* job types on the planning timeline (§14a) */
+  --jt-survey: #8e6bd8;
+  --jt-installation: #1a73e8;
+  --jt-inspection: #1e8e3e;
+  --jt-maintenance: #c77c02;
+  --jt-dismantling: #00897b;
   color-scheme: light;
 }
 
@@ -35,6 +41,11 @@
     --danger: #f2706c;
     --info: #6ea8fe;
     --shadow: none;
+    --jt-survey: #b39af0;
+    --jt-installation: #6ea8fe;
+    --jt-inspection: #5cc27c;
+    --jt-maintenance: #f0b04a;
+    --jt-dismantling: #3fc1b0;
     color-scheme: dark;
   }
 }
@@ -78,7 +89,9 @@ h2 {
 
 .shell {
   display: grid;
-  grid-template-columns: 224px 1fr;
+  /* minmax(0, …): wide content (the planning timeline) scrolls inside its card
+     instead of stretching the page */
+  grid-template-columns: 224px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -415,6 +428,238 @@ dialog.modal::backdrop {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+/* --- planning timeline (§14a) --------------------------------------------- */
+
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.tl-scroll {
+  overflow-x: auto;
+}
+
+.tl-inner {
+  position: relative;
+}
+
+.tl-grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.tl-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--border);
+  opacity: 0.6;
+}
+
+.tl-line.strong {
+  opacity: 1;
+}
+
+.tl-weekend {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--surface-2);
+}
+
+.tl-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid var(--danger);
+  z-index: 1;
+}
+
+.tl-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  min-height: 56px;
+}
+
+.tl-row.sub {
+  min-height: 40px;
+}
+
+.tl-head {
+  min-height: 32px;
+}
+
+.tl-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 280px;
+  flex: 0 0 280px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+}
+
+.tl-row.sub .tl-label {
+  padding-left: 30px;
+}
+
+.tl-lane {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.tl-tick {
+  position: absolute;
+  top: 8px;
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.tl-project {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.tl-caret {
+  width: 14px;
+  color: var(--text-2);
+}
+
+.tl-job {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tl-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.tl-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.bar.clip-start {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.bar.clip-end {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.bar.planned {
+  height: 26px;
+  border: 1.5px dashed var(--text-2);
+  background: color-mix(in srgb, var(--text-2) 6%, transparent);
+}
+
+.bar.onsite {
+  height: 10px;
+  background: var(--text-2);
+}
+
+.bar.onsite.soon {
+  background: var(--warning);
+}
+
+.bar.onsite.overdue {
+  background: var(--danger);
+}
+
+.bar.visit {
+  height: 22px;
+  z-index: 1;
+}
+
+.bar.visit:hover {
+  outline: 2px solid var(--text);
+}
+
+.bar.visit.done {
+  opacity: 0.55;
+}
+
+.bar.visit.unstaffed {
+  background: transparent !important;
+  border: 2px solid var(--warning);
+}
+
+.jt-SURVEY { background: var(--jt-survey); }
+.jt-INSTALLATION { background: var(--jt-installation); }
+.jt-INSPECTION { background: var(--jt-inspection); }
+.jt-MAINTENANCE { background: var(--jt-maintenance); }
+.jt-DISMANTLING { background: var(--jt-dismantling); }
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.legend {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 22px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.swatch.planned {
+  height: 14px;
+  border: 1.5px dashed var(--text-2);
+}
+
+.swatch.onsite {
+  background: var(--text-2);
+}
+
+.swatch.unstaffed {
+  height: 14px;
+  border: 2px solid var(--warning);
 }
 
 /* --- login ------------------------------------------------------------------ */
