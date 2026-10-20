@@ -1,19 +1,24 @@
 """Worker management for managers (ARCHITECTURE §6, §7, §20)."""
 
+from datetime import date, datetime, time, timedelta
 from http import HTTPStatus
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import Select, func, or_, select, update
+from sqlalchemy.dialects.postgresql import Range
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.core.security import hash_password
+from app.core.time import YEREVAN
 from app.db.crud import not_found
 from app.modules.audit import service as audit
 from app.modules.auth.models import RefreshToken
+from app.modules.scheduling.models import AssignmentStatus, VisitAssignment
 from app.modules.users.models import User, UserRole, Worker
 from app.modules.users.service import create_user, normalize_email, normalize_phone
-from app.modules.workers.schemas import WorkerIn, WorkerOut, WorkerPatch
+from app.modules.workers.models import WorkerTimeOff
+from app.modules.workers.schemas import TimeOffIn, TimeOffOut, WorkerIn, WorkerOut, WorkerPatch
 
 
 def to_out(worker: Worker, user: User) -> WorkerOut:
@@ -157,4 +162,130 @@ async def reset_password(
         entity_type="worker",
         entity_id=worker.id,
     )
+    await session.commit()
+
+
+# --- time off (§8 worker_time_off, §14) -------------------------------------------
+
+
+def _day_range(first: date, last: date) -> Range[datetime]:
+    """Whole Yerevan days [first 00:00, last+1 00:00)."""
+    return Range(
+        datetime.combine(first, time(), YEREVAN),
+        datetime.combine(last + timedelta(days=1), time(), YEREVAN),
+        bounds="[)",
+    )
+
+
+async def _time_off_out(
+    session: AsyncSession, rows: list[tuple[WorkerTimeOff, str]]
+) -> list[TimeOffOut]:
+    out = []
+    for entry, name in rows:
+        assert entry.period.lower is not None and entry.period.upper is not None  # noqa: S101
+        booked = await session.scalar(
+            select(func.count())
+            .select_from(VisitAssignment)
+            .where(
+                VisitAssignment.worker_id == entry.worker_id,
+                VisitAssignment.status != AssignmentStatus.CANCELLED,
+                VisitAssignment.period.overlaps(entry.period),
+            )
+        )
+        out.append(
+            TimeOffOut(
+                id=entry.id,
+                worker_id=entry.worker_id,
+                worker_name=name,
+                first_day=entry.period.lower.astimezone(YEREVAN).date(),
+                last_day=(entry.period.upper.astimezone(YEREVAN) - timedelta(days=1)).date(),
+                reason=entry.reason,
+                note=entry.note,
+                booked_tasks=booked or 0,
+            )
+        )
+    return out
+
+
+def _time_off_query() -> Select[WorkerTimeOff, str]:
+    return (
+        select(WorkerTimeOff, User.first_name + " " + User.last_name)
+        .join(Worker, Worker.id == WorkerTimeOff.worker_id)
+        .join(User, User.id == Worker.user_id)
+        .order_by(func.lower(WorkerTimeOff.period))
+    )
+
+
+async def list_time_off(
+    session: AsyncSession, *, worker_id: int | None, start: date | None, end: date | None
+) -> list[TimeOffOut]:
+    stmt = _time_off_query()
+    if worker_id is not None:
+        await _get(session, worker_id)  # 404 for an unknown worker
+        stmt = stmt.where(WorkerTimeOff.worker_id == worker_id)
+    if start is not None and end is not None:
+        stmt = stmt.where(WorkerTimeOff.period.overlaps(_day_range(start, end)))
+    return await _time_off_out(session, [(t, name) for t, name in await session.execute(stmt)])
+
+
+async def create_time_off(
+    session: AsyncSession, worker_id: int, data: TimeOffIn, manager: User
+) -> TimeOffOut:
+    _, user = await _get(session, worker_id)
+    entry = WorkerTimeOff(
+        worker_id=worker_id,
+        period=_day_range(data.first_day, data.last_day),
+        reason=data.reason,
+        note=data.note,
+        created_by=manager.id,
+    )
+    session.add(entry)
+    try:
+        await session.flush()
+    except IntegrityError as exc:
+        await session.rollback()
+        if "no_time_off_overlap" in str(exc.orig):
+            raise AppError(
+                "TIME_OFF_OVERLAP",
+                "This worker already has time off on some of these days.",
+                status_code=HTTPStatus.CONFLICT,
+            ) from exc
+        raise
+    audit.record(
+        session,
+        "time_off.created",
+        user_id=manager.id,
+        entity_type="worker_time_off",
+        entity_id=entry.id,
+        metadata={
+            "worker_id": worker_id,
+            "first_day": data.first_day.isoformat(),
+            "last_day": data.last_day.isoformat(),
+            "reason": data.reason.value,
+        },
+    )
+    await session.commit()
+    [out] = await _time_off_out(session, [(entry, user.full_name)])
+    return out
+
+
+async def delete_time_off(session: AsyncSession, time_off_id: int, manager: User) -> None:
+    entry = await session.get(WorkerTimeOff, time_off_id)
+    if entry is None:
+        raise not_found("time off")
+    assert entry.period.lower is not None and entry.period.upper is not None  # noqa: S101
+    audit.record(
+        session,
+        "time_off.deleted",
+        user_id=manager.id,
+        entity_type="worker_time_off",
+        entity_id=entry.id,
+        metadata={
+            "worker_id": entry.worker_id,
+            "from": entry.period.lower.isoformat(),
+            "to": entry.period.upper.isoformat(),
+            "reason": entry.reason.value,
+        },
+    )
+    await session.delete(entry)
     await session.commit()

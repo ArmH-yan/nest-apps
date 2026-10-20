@@ -3634,6 +3634,108 @@
         "title": "TimeEntryRowOut",
         "type": "object"
       },
+      "TimeOffIn": {
+        "description": "Whole Yerevan days, both inclusive.",
+        "properties": {
+          "first_day": {
+            "format": "date",
+            "title": "First Day",
+            "type": "string"
+          },
+          "last_day": {
+            "format": "date",
+            "title": "Last Day",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/TimeOffReason"
+          }
+        },
+        "required": [
+          "first_day",
+          "last_day",
+          "reason"
+        ],
+        "title": "TimeOffIn",
+        "type": "object"
+      },
+      "TimeOffOut": {
+        "properties": {
+          "booked_tasks": {
+            "title": "Booked Tasks",
+            "type": "integer"
+          },
+          "first_day": {
+            "format": "date",
+            "title": "First Day",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "last_day": {
+            "format": "date",
+            "title": "Last Day",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/TimeOffReason"
+          },
+          "worker_id": {
+            "title": "Worker Id",
+            "type": "integer"
+          },
+          "worker_name": {
+            "title": "Worker Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "worker_id",
+          "worker_name",
+          "first_day",
+          "last_day",
+          "reason",
+          "note",
+          "booked_tasks"
+        ],
+        "title": "TimeOffOut",
+        "type": "object"
+      },
+      "TimeOffReason": {
+        "enum": [
+          "VACATION",
+          "SICK",
+          "OTHER"
+        ],
+        "title": "TimeOffReason",
+        "type": "string"
+      },
       "TimesheetDetailOut": {
         "properties": {
           "assignment_id": {
@@ -8517,6 +8619,109 @@
         ]
       }
     },
+    "/api/v1/workers/time-off": {
+      "get": {
+        "description": "Every worker's time off overlapping [from, to] (Yerevan dates, inclusive),\nfor the planning timeline and the crew editor's warnings (§14).",
+        "operationId": "all_time_off_api_v1_workers_time_off_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TimeOffOut"
+                  },
+                  "title": "Response All Time Off Api V1 Workers Time Off Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "All Time Off",
+        "tags": [
+          "workers"
+        ]
+      }
+    },
+    "/api/v1/workers/time-off/{time_off_id}": {
+      "delete": {
+        "operationId": "delete_time_off_api_v1_workers_time_off__time_off_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "time_off_id",
+            "required": true,
+            "schema": {
+              "title": "Time Off Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Time Off",
+        "tags": [
+          "workers"
+        ]
+      }
+    },
     "/api/v1/workers/{worker_id}": {
       "get": {
         "operationId": "get_worker_api_v1_workers__worker_id__get",
@@ -8664,6 +8869,112 @@
           }
         ],
         "summary": "Reset Password",
+        "tags": [
+          "workers"
+        ]
+      }
+    },
+    "/api/v1/workers/{worker_id}/time-off": {
+      "get": {
+        "operationId": "worker_time_off_api_v1_workers__worker_id__time_off_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "title": "Worker Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TimeOffOut"
+                  },
+                  "title": "Response Worker Time Off Api V1 Workers  Worker Id  Time Off Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Worker Time Off",
+        "tags": [
+          "workers"
+        ]
+      },
+      "post": {
+        "operationId": "create_time_off_api_v1_workers__worker_id__time_off_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "title": "Worker Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeOffIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Time Off",
         "tags": [
           "workers"
         ]

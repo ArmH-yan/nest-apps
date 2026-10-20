@@ -239,6 +239,11 @@ function CrewEditor({
 }) {
   const { t, errorText } = useI18n();
   const workers = useApi<Worker[]>("/api/v1/workers?active=true");
+  // time off is a warning, not a block (ARCHITECTURE §14)
+  const timeOff = useApi<Schemas["TimeOffOut"][]>(
+    `/api/v1/workers/time-off?from=${yerevanDate(visit.starts_at)}&to=${yerevanDate(visit.ends_at)}`,
+  );
+  const away = new Map((timeOff.data ?? []).map((o) => [String(o.worker_id), o]));
   const [rows, setRows] = useState<CrewRow[]>(
     visit.crew.map((m) => ({
       worker_id: String(m.worker_id),
@@ -309,6 +314,7 @@ function CrewEditor({
                       disabled={chosen.has(String(w.id)) && row.worker_id !== String(w.id)}
                     >
                       {w.full_name} ({w.employee_code})
+                      {away.has(String(w.id)) ? ` · ${t("timeOff.onLeave")}` : ""}
                     </option>
                   ))}
                 </select>
@@ -355,6 +361,21 @@ function CrewEditor({
           >
             + {t("jobs.addWorker")}
           </button>
+          {rows
+            .filter((r) => away.has(r.worker_id))
+            .map((r) => {
+              const o = away.get(r.worker_id)!;
+              return (
+                <div key={r.worker_id} className="alert warn">
+                  {t("timeOff.crewWarning", {
+                    name: o.worker_name,
+                    reason: t(`timeOffReason.${o.reason}` as MessageKey),
+                    from: formatDate(`${o.first_day}T12:00:00Z`),
+                    to: formatDate(`${o.last_day}T12:00:00Z`),
+                  })}
+                </div>
+              );
+            })}
           {message && <div className="alert">{message}</div>}
           {error != null && (
             <div className="alert">

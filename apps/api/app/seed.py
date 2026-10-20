@@ -10,7 +10,7 @@ APP_ENV=production.
 
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select, text
@@ -46,6 +46,7 @@ from app.modules.timetracking.models import (
 )
 from app.modules.users.models import User, UserLocale, UserRole, Worker
 from app.modules.users.service import create_user, get_worker_for_user
+from app.modules.workers.models import TimeOffReason, WorkerTimeOff
 
 PASSWORD = "nest1234"  # noqa: S105 — demo accounts only; seeding is refused in production
 _KEEP_ON_RESET = {"services", "catalog_items", "alembic_version"}
@@ -510,6 +511,21 @@ async def seed_demo(session: AsyncSession, *, reset: bool) -> list[str]:
             days_ago,
             pay,
         )
+    # Karen's vacation next week: shows on the planning timeline and in the crew editor
+    karen_off = today + timedelta(days=2)
+    session.add(
+        WorkerTimeOff(
+            worker_id=people.karen.id,
+            period=Range(
+                datetime.combine(karen_off, time(), YEREVAN),
+                datetime.combine(karen_off + timedelta(days=5), time(), YEREVAN),
+                bounds="[)",
+            ),
+            reason=TimeOffReason.VACATION,
+            note="Family trip",
+            created_by=people.manager.id,
+        )
+    )
     await session.commit()
 
     return [

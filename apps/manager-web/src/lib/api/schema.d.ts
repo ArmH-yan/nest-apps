@@ -936,6 +936,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workers/time-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * All Time Off
+         * @description Every worker's time off overlapping [from, to] (Yerevan dates, inclusive),
+         *     for the planning timeline and the crew editor's warnings (§14).
+         */
+        get: operations["all_time_off_api_v1_workers_time_off_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workers/time-off/{time_off_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Time Off */
+        delete: operations["delete_time_off_api_v1_workers_time_off__time_off_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workers/{worker_id}": {
         parameters: {
             query?: never;
@@ -965,6 +1003,24 @@ export interface paths {
         put?: never;
         /** Reset Password */
         post: operations["reset_password_api_v1_workers__worker_id__reset_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workers/{worker_id}/time-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Worker Time Off */
+        get: operations["worker_time_off_api_v1_workers__worker_id__time_off_get"];
+        put?: never;
+        /** Create Time Off */
+        post: operations["create_time_off_api_v1_workers__worker_id__time_off_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2146,6 +2202,54 @@ export interface components {
              */
             started_at: string;
         };
+        /**
+         * TimeOffIn
+         * @description Whole Yerevan days, both inclusive.
+         */
+        TimeOffIn: {
+            /**
+             * First Day
+             * Format: date
+             */
+            first_day: string;
+            /**
+             * Last Day
+             * Format: date
+             */
+            last_day: string;
+            /** Note */
+            note?: string | null;
+            reason: components["schemas"]["TimeOffReason"];
+        };
+        /** TimeOffOut */
+        TimeOffOut: {
+            /** Booked Tasks */
+            booked_tasks: number;
+            /**
+             * First Day
+             * Format: date
+             */
+            first_day: string;
+            /** Id */
+            id: number;
+            /**
+             * Last Day
+             * Format: date
+             */
+            last_day: string;
+            /** Note */
+            note: string | null;
+            reason: components["schemas"]["TimeOffReason"];
+            /** Worker Id */
+            worker_id: number;
+            /** Worker Name */
+            worker_name: string;
+        };
+        /**
+         * TimeOffReason
+         * @enum {string}
+         */
+        TimeOffReason: "VACATION" | "SICK" | "OTHER";
         /** TimesheetDetailOut */
         TimesheetDetailOut: {
             /** Assignment Id */
@@ -4586,6 +4690,67 @@ export interface operations {
             };
         };
     };
+    all_time_off_api_v1_workers_time_off_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeOffOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_time_off_api_v1_workers_time_off__time_off_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                time_off_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_worker_api_v1_workers__worker_id__get: {
         parameters: {
             query?: never;
@@ -4673,6 +4838,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    worker_time_off_api_v1_workers__worker_id__time_off_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                worker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeOffOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_time_off_api_v1_workers__worker_id__time_off_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                worker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeOffIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeOffOut"];
+                };
             };
             /** @description Validation Error */
             422: {

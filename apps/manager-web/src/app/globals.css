@@ -350,6 +350,12 @@ table.list tr.clickable:hover td {
   font-size: 14px;
 }
 
+.alert.warn {
+  border-color: var(--warning);
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+}
+
 .alert.ok {
   border-color: var(--success);
   color: var(--success);
@@ -620,6 +626,23 @@ dialog.modal::backdrop {
 .bar.visit.unstaffed {
   background: transparent !important;
   border: 2px solid var(--warning);
+}
+
+.bar.timeoff {
+  height: 30px;
+  color: var(--text-2);
+  font-weight: 600;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--text-2) 22%, transparent) 0 6px,
+    color-mix(in srgb, var(--text-2) 10%, transparent) 6px 12px
+  );
+  white-space: nowrap;
+}
+
+.swatch.timeoff {
+  height: 14px;
+  background: color-mix(in srgb, var(--text-2) 30%, transparent);
 }
 
 .jt-SURVEY { background: var(--jt-survey); }

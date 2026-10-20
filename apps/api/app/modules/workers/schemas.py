@@ -1,7 +1,11 @@
-from pydantic import BaseModel, Field
+from datetime import date
+from typing import Self
+
+from pydantic import BaseModel, Field, model_validator
 
 from app.core.schemas import Email
 from app.modules.users.models import UserLocale
+from app.modules.workers.models import TimeOffReason
 
 
 class WorkerOut(BaseModel):
@@ -47,3 +51,33 @@ class WorkerPatch(BaseModel):
 
 class ResetPasswordIn(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class TimeOffIn(BaseModel):
+    """Whole Yerevan days, both inclusive."""
+
+    first_day: date
+    last_day: date
+    reason: TimeOffReason
+    note: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Self:
+        if self.last_day < self.first_day:
+            raise ValueError("last_day must not be before first_day.")
+        if (self.last_day - self.first_day).days > 366:
+            raise ValueError("Time off can't be longer than a year.")
+        return self
+
+
+class TimeOffOut(BaseModel):
+    id: int
+    worker_id: int
+    worker_name: str
+    first_day: date
+    last_day: date
+    reason: TimeOffReason
+    note: str | None
+    # non-cancelled tasks of this worker inside the absence: a warning for the
+    # manager (time off doesn't block scheduling, §14)
+    booked_tasks: int

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
+import { TimeOffSection } from "@/components/time-off";
 import { ErrorBox, Field, Flags, Loading, StatTile, StatusBadge } from "@/components/ui";
 import { downloadFile, type Schemas } from "@/lib/api/client";
 import { formatDate, formatDuration, formatMoney, formatTime } from "@/lib/format";
@@ -109,6 +110,8 @@ export default function WorkerInfoPage() {
           hint={d.first_task_at ? t("info.firstTask", { date: formatDate(d.first_task_at) }) : undefined}
         />
       </div>
+
+      <TimeOffSection workerId={d.worker_id} />
 
       <section className="card stack" style={{ gap: 8 }}>
         <h2>{t("info.byMonth")}</h2>

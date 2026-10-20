@@ -405,11 +405,17 @@ created_at, updated_at
 ```text
 id
 worker_id
-period           tstzrange
+period           tstzrange, whole Yerevan days [first 00:00, last+1 00:00)
 reason           VACATION | SICK | OTHER
 note
 created_by
+created_at
 ```
+
+As built (migration `0006`, `app/modules/workers/models.py`):
+- Absences of one worker may not overlap: the exclusion constraint `no_time_off_overlap` returns `409 TIME_OFF_OVERLAP`.
+- Time off doesn't block scheduling (§14). Instead, each row reports `booked_tasks`, the number of the worker's non-cancelled tasks that fall inside it.
+- Creating and deleting time off is audited (`time_off.created`, `time_off.deleted`).
 
 ### companies
 
@@ -937,7 +943,11 @@ A dedicated Next.js app (`apps/manager-web`), built for desktop.
 - Map tiles come from tile.openstreetmap.org (fine for a handful of managers; switch to a tile provider or self-hosted tiles if usage grows).
 - **Timesheets (2026-10-18)**: list (`/timesheets`; filters for date range, worker and "waiting for approval / flagged / approved / all", kept in the URL), and a detail page (`/timesheets/{assignment_id}`). See "Timesheets" below.
 - **Planning timeline (2026-10-19)**: `/planning`, by project and by worker (§14a).
-- Next: worker time off, push + reminders.
+- **Worker time off (2026-10-20)**:
+  - add and delete absences on the worker's Info page; each one warns how many booked tasks fall inside it
+  - the crew editor marks workers on leave and shows an amber warning (it doesn't block)
+  - absences show as striped blocks on the planning timeline's worker rows
+- Next: push + reminders.
 
 ## Main navigation
 
@@ -1111,7 +1121,7 @@ P-2026-0005 Komitas          [SURV]  ┄┄┄┄ expected ┄┄┄┄
 ### Mode 2: by worker (resource timeline)
 
 - One row per active worker; the bars are that worker's assignments (`GET /schedule`), coloured by job type. Days without work are empty.
-- Later: time off (`worker_time_off`) shown as grey blocks.
+- Time off (`worker_time_off`) is shown as striped grey blocks with the reason (built 2026-10-20).
 - This is the §14 Day/Week view. It answers "who is free on Thursday" before the manager opens the crew editor.
 
 ### v1 scope (deliberately small)
@@ -1399,6 +1409,15 @@ DELETE /visits/{id}
 PUT    /visits/{id}/crew
 GET    /schedule?from=&to=&worker_id=
 GET    /planning/projects?from=&to=      planning timeline (§14a)
+```
+
+### Time off
+
+```text
+GET    /workers/{id}/time-off
+POST   /workers/{id}/time-off              {first_day, last_day, reason, note}; 409 TIME_OFF_OVERLAP
+GET    /workers/time-off?from=&to=         every worker's absences overlapping the dates (timeline, crew editor)
+DELETE /workers/time-off/{id}
 ```
 
 ### Timesheets
@@ -2054,7 +2073,7 @@ Seed script; first real field test with 1–2 workers
 
 ## Phase 3 — Manager web app
 
-Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). **Timesheets done (2026-10-18)**: review, approve, adjust, location override and CSV, both API and web (§13 "Timesheets"). **Info views (2026-10-19)**: worker and company statistics (§13a). **Planning timeline v1 done (2026-10-19)** (§14a). Next: worker time off (it also shows on the timeline's worker rows), then FCM push + reminders.
+Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). **Timesheets done (2026-10-18)**: review, approve, adjust, location override and CSV, both API and web (§13 "Timesheets"). **Info views (2026-10-19)**: worker and company statistics (§13a). **Planning timeline v1 done (2026-10-19)** (§14a). **Worker time off done (2026-10-20)** (§8 `worker_time_off`, §13). Next: FCM push + reminders.
 
 ```text
 Login, dashboard, jobs/visits, crews, workers + time off

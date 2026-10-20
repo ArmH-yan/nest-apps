@@ -22,6 +22,7 @@ type Project = Schemas["PlanningProjectOut"];
 type Visit = Schemas["PlanningVisitOut"];
 type Entry = Schemas["ScheduleEntryOut"];
 type Worker = Schemas["WorkerOut"];
+type TimeOff = Schemas["TimeOffOut"];
 
 const MODES = ["projects", "workers"] as const;
 type Mode = (typeof MODES)[number];
@@ -239,6 +240,7 @@ function WorkersView({ scale }: { scale: Scale }) {
   const to = encodeURIComponent(yerevanInstant(addDays(scale.end, 1), "00:00"));
   const workers = useApi<Worker[]>("/api/v1/workers?active=true");
   const entries = useApi<Entry[]>(`/api/v1/schedule?from=${from}&to=${to}`);
+  const timeOff = useApi<TimeOff[]>(`/api/v1/workers/time-off?from=${scale.start}&to=${scale.end}`);
   const now = new Date().toISOString();
 
   if ((workers.loading && !workers.data) || (entries.loading && !entries.data)) return <Loading />;
@@ -247,6 +249,8 @@ function WorkersView({ scale }: { scale: Scale }) {
 
   const byWorker = new Map<number, Entry[]>();
   for (const e of entries.data) byWorker.set(e.worker_id, [...(byWorker.get(e.worker_id) ?? []), e]);
+  const away = new Map<number, TimeOff[]>();
+  for (const o of timeOff.data ?? []) away.set(o.worker_id, [...(away.get(o.worker_id) ?? []), o]);
 
   return (
     <Timeline scale={scale} now={now}>
@@ -265,6 +269,21 @@ function WorkersView({ scale }: { scale: Scale }) {
               </span>
             }
           >
+            {(away.get(w.id) ?? []).map((o) => (
+              <Bar
+                key={`off-${o.id}`}
+                scale={scale}
+                from={yerevanInstant(o.first_day, "00:00")}
+                to={yerevanInstant(addDays(o.last_day, 1), "00:00")}
+                className="timeoff"
+                title={`${t(`timeOffReason.${o.reason}` as MessageKey)}: ${formatDate(
+                  `${o.first_day}T12:00:00Z`,
+                )} – ${formatDate(`${o.last_day}T12:00:00Z`)}${o.note ? `
+${o.note}` : ""}`}
+              >
+                {scale.zoom !== "1y" && t(`timeOffReason.${o.reason}` as MessageKey)}
+              </Bar>
+            ))}
             {own.map((e) => (
               <Bar
                 key={e.assignment_id}
@@ -297,6 +316,12 @@ function Legend({ mode }: { mode: Mode }) {
           {t(`jobType.${type}`)}
         </span>
       ))}
+      {mode === "workers" && (
+        <span className="row" style={{ gap: 6 }}>
+          <span className="swatch timeoff" />
+          {t("timeOff.title")}
+        </span>
+      )}
       {mode === "projects" && (
         <>
           <span className="row" style={{ gap: 6 }}>
