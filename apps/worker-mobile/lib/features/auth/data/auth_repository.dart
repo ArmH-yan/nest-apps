@@ -6,6 +6,7 @@ import '../../../core/api/nest_api.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../earnings/data/earnings_repository.dart';
+import '../domain/phone_number.dart';
 import '../domain/worker.dart';
 
 /// Session handling. Tokens live in secure storage; the (non-secret) worker
@@ -40,7 +41,10 @@ class AuthRepository {
     required String phone,
     required String password,
   }) async {
-    final result = await _api.login(phone: phone, password: password);
+    final result = await _api.login(
+      phone: normalizePhone(phone),
+      password: password,
+    );
     // A different worker on this device: local data belongs to someone else.
     final lastId = _prefs.getString(_lastWorkerIdKey);
     if (lastId != null && lastId != result.worker.id) await _db.clearAll();

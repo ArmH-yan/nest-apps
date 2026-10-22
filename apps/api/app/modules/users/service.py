@@ -15,11 +15,21 @@ from app.modules.audit import service as audit
 from app.modules.users.models import User, UserLocale, UserRole, Worker
 
 _PHONE_RE = re.compile(r"^\+?[0-9]{8,15}$")
+# separators people type or paste: any whitespace (\s also matches the non-breaking
+# spaces messengers paste), - ( ) . /
+_SEPARATORS = re.compile(r"[\s\-().\/]+")
+_ARMENIAN_LOCAL = re.compile(r"^0([0-9]{8})$")  # 0XX XXX XXX
+_ARMENIAN_INTL = re.compile(r"^(?:\+|00)?3740?([0-9]{8})$")  # +374 / 00374 / 374, stray 0
 
 
 def normalize_phone(raw: str) -> str:
-    """'+374 91 00-00-07' → '+37491000007'. Raises INVALID_PHONE if it isn't a number."""
-    phone = re.sub(r"[\s\-().]", "", raw)
+    """One stored form for every way a number is typed (E.164, `+374XXXXXXXX` for
+    Armenia): '+374 91 00-00-07', '091 000 007', '0 91   000007', '37491000007',
+    '0037491000007' and '+374 091 000 007' all → '+37491000007'.
+    Raises INVALID_PHONE if it isn't a number."""
+    phone = _SEPARATORS.sub("", raw)
+    if (m := _ARMENIAN_LOCAL.fullmatch(phone)) or (m := _ARMENIAN_INTL.fullmatch(phone)):
+        return f"+374{m[1]}"
     if not _PHONE_RE.fullmatch(phone):
         raise AppError("INVALID_PHONE", "The phone number is not valid.")
     return phone

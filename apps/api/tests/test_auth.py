@@ -17,7 +17,7 @@ from app.modules.audit.models import AuditLog
 from app.modules.auth.dependencies import AuthContext, CurrentAuth, require_roles
 from app.modules.auth.models import RefreshToken
 from app.modules.users.models import User, UserLocale, UserRole
-from app.modules.users.service import create_user
+from app.modules.users.service import create_user, normalize_phone
 
 PASSWORD = "first-pass-123"
 PHONE = "+37491000007"
@@ -96,6 +96,49 @@ async def test_login_returns_tokens_and_worker_profile(
     assert body["user"]["role"] == "WORKER"
     assert body["user"]["worker"]["employee_code"] == "NEST-007"
     assert await actions(session) == ["user.created", "auth.login"]
+
+
+@pytest.mark.parametrize(
+    "typed",
+    [
+        "+374 91 000 007",
+        "+37491000007",
+        "091 000 007",  # local Armenian format
+        "091000007",
+        "0 91   000   007",  # lots of spaces
+        "  091\u00a0000\u202f007 ",  # non-breaking spaces, pasted from a messenger
+        "(091) 00-00-07",
+        "374 91 000 007",
+        "00374 91 000 007",
+        "+374 091 000 007",  # +374 and the local 0
+    ],
+)
+async def test_login_accepts_every_way_a_phone_is_typed(
+    client: AsyncClient, make_user: MakeUser, typed: str
+) -> None:
+    await make_user()  # stored as +37491000007
+
+    response = await login(client, phone=typed)
+
+    assert response.status_code == 200, (typed, response.text)
+
+
+@pytest.mark.parametrize(
+    ("typed", "stored"),
+    [
+        ("091 000 007", "+37491000007"),
+        ("+1 (415) 555-0100", "+14155550100"),  # foreign numbers stay as they are
+    ],
+)
+def test_normalize_phone(typed: str, stored: str) -> None:
+    assert normalize_phone(typed) == stored
+
+
+@pytest.mark.parametrize("bad", ["call me", "091 000", "0 91 000 0071234567890"])
+def test_normalize_phone_rejects_non_numbers(bad: str) -> None:
+    with pytest.raises(AppError) as error:
+        normalize_phone(bad)
+    assert error.value.code == "INVALID_PHONE"
 
 
 async def test_password_is_hashed_with_argon2id(make_user: MakeUser) -> None:

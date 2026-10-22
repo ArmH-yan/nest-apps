@@ -46,7 +46,7 @@ export default function LoginPage() {
             required
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+374 91 000 001"
+            placeholder="091 000 001 · +374 91 000 001"
           />
         </Field>
         <Field label={t("login.password")}>

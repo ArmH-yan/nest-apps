@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../features/auth/domain/phone_number.dart';
 import '../../features/auth/domain/worker.dart';
 import '../../features/completion/domain/completion_models.dart';
 import '../../features/earnings/domain/earnings_summary.dart';
@@ -93,8 +94,7 @@ class MockNestApi implements NestApi {
     required String password,
   }) async {
     await _call();
-    final normalized = phone.replaceAll(RegExp(r'[^0-9+]'), '');
-    if (normalized != MockData.worker.phone.replaceAll(' ', '') ||
+    if (normalizePhone(phone) != normalizePhone(MockData.worker.phone) ||
         password != _password) {
       throw const ApiException(
         code: 'INVALID_CREDENTIALS',
