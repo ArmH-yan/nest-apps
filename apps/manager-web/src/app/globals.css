@@ -135,6 +135,27 @@ h2 {
   opacity: 0.85;
 }
 
+.nav-badge {
+  float: right;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 20px;
+}
+
+h3 {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .nav-link:hover {
   background: rgb(255 255 255 / 6%);
   opacity: 1;

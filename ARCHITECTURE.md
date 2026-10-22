@@ -506,12 +506,14 @@ submitted_name
 submitted_company
 submitted_phone
 submitted_email
-service_slug
+submitted_service  the website's service name as sent (any of its languages)
+service_slug     matched from submitted_service, or set by the manager
 project_type
 message
 site_address     nullable
 latitude, longitude  nullable
 preferred_date   nullable
+review_note      nullable  (call notes, or the reason for REJECTED / SPAM)
 contact_id       nullable  (set during review)
 project_id       nullable  (set on conversion)
 reviewed_by
@@ -828,6 +830,18 @@ IN_REVIEW ──── REJECTED
 CONVERTED  → creates/links company, contact, site, project (status LEAD or SURVEY)
 ```
 
+As built (2026-10-22, `app/modules/requests`, migration `0008`):
+- The transition table is `REQUEST_TRANSITIONS`, for managers only. REJECTED and SPAM can be reopened to IN_REVIEW. Conversion is final: after it, PATCH returns `409 REQUEST_CONVERTED`.
+- **Convert** (`POST /assessment-requests/{id}/convert`) takes, for each part, an existing record (`company_id`, `contact_id`, `site_id`) or a new one (`new_company`, `new_contact`, `new_site`). A private customer has no company.
+  - The project starts LEAD or SURVEY.
+  - Everything runs in **one transaction**: the create functions of companies, sites and projects take `commit=False`. A failure leaves nothing half-made.
+  - A new contact gets the request's locale as `preferred_locale`.
+- Leads taken **by phone** are entered by a manager (`POST /assessment-requests`, source `phone` or `manual`).
+- **Manager alerts**:
+  - a red badge with the number of NEW requests next to "Requests" in the sidebar, refreshed every minute (`GET /assessment-requests/counts`)
+  - a "New requests" card on the dashboard
+  - Telegram alerts come with the bot (§26a)
+
 ---
 
 # 10. Project Lifecycle
@@ -913,7 +927,7 @@ The public website already exists. It needs **no UI changes** to start feeding t
 - `src/app/api/contact/route.ts` validates the body and calls `submitContact()`.
 - `src/lib/contact.ts` is the provider seam. In production mode it POSTs the payload to `CONTACT_API_URL`.
 - Payload: `name, company, phone, email, service, projectType, message`.
-- `README.md` / `AGENTS.md` still describe a Planfix webhook and should be updated to point at the NEST API.
+- `README.md` / `AGENTS.md` describe the NEST API (updated 2026-10-22; the Planfix webhook is gone).
 
 ### Integration
 
@@ -925,6 +939,21 @@ Browser ──► nest_web /api/contact (server) ──► FastAPI POST /api/v1/
 - Set `NEXT_PUBLIC_FORM_MODE=production`, `CONTACT_API_URL=https://api.<domain>/api/v1/public/assessment-requests` and `CONTACT_API_KEY`.
 - In `submitContact()`, send `CONTACT_API_KEY` as a header and add `locale` and `source: "website"` to the payload.
 - FastAPI accepts the existing field names unchanged and maps them to `submitted_*` columns. `service` is matched to `services.slug`.
+
+As built (2026-10-22):
+- **Auth**: `X-Service-Key` must equal `INTAKE_SERVICE_KEY` (constant-time compare). If the key is missing, wrong, or not configured, the answer is `401 INVALID_SERVICE_KEY`.
+- **Response**: `201 {"reference": "REQ-2026-0001"}`. nest_web only checks `res.ok`.
+- **Fields**:
+  - `name` and `message` are required, plus a `phone` or an `email`
+  - an optional `locale` (`hy`, `ru`, `en`)
+  - unknown fields are ignored (e.g. a Turnstile token)
+  - the email is stored as typed, not validated, because it is kept "as received"
+- **The form sends the service's display name** in the visitor's language, not the slug. `WEBSITE_SERVICE_NAMES` in `requests/service.py` maps the six names from `nest_web/src/config/translations.ts` (hy/en/ru) to `safety-system` and `dust-protection`; a slug is accepted too. An unknown name keeps `service_slug` null, and the manager sets it. **Keep that mapping in step with the website's translations.**
+- **Abuse**:
+  - the same email or phone with the same message within 24 h returns the first request's reference instead of a new row (double clicks, re-sends)
+  - more than 30 website leads in one hour → `429 RATE_LIMITED`
+  - Turnstile and the honeypot stay in nest_web
+- **nest_web side done (2026-10-22, nest_web `43d7705`)**: `submitContact()` sends `X-Service-Key: CONTACT_API_KEY`, and the form adds the visitor's `locale`. Tested end to end locally: the website's `/api/contact` in production mode → this API → `REQ-2026-0002` (ru, dust-protection). Its README/AGENTS.md now describe this API instead of Planfix.
 - The browser never sees the API key or the API host.
 
 ### Spam and abuse
@@ -1378,8 +1407,10 @@ GET    /me
 ### Assessment requests
 
 ```text
-POST   /public/assessment-requests
-GET    /assessment-requests
+POST   /public/assessment-requests        X-Service-Key; website payload unchanged; 201 {reference}
+GET    /assessment-requests?status=&q=       status may repeat (e.g. NEW and IN_REVIEW)
+GET    /assessment-requests/counts           {new, in_review}: sidebar badge and dashboard
+POST   /assessment-requests                  phone / manual lead entered by a manager
 GET    /assessment-requests/{id}
 PATCH  /assessment-requests/{id}
 POST   /assessment-requests/{id}/convert
@@ -2149,6 +2180,8 @@ Manager web: Connect Telegram in profile
 ```
 
 ## Phase 4 — Intake
+
+Status: **done (2026-10-22)**: backend, manager web and the nest_web header change (§9 and §12 "As built"). Going live only needs deployment: the API on a public HTTPS host, then `NEXT_PUBLIC_FORM_MODE=production`, `CONTACT_API_URL` and `CONTACT_API_KEY` set where the site is hosted.
 
 ```text
 Public intake endpoint (service key); connect nest_web /api/contact

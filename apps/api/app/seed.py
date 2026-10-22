@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.time import YEREVAN
 from app.db.models import Base
+from app.db.references import next_reference
 from app.modules.companies.models import Company, Contact
 from app.modules.files.models import File, FileKind, FileOwner, FileStatus
 from app.modules.materials.models import CatalogItem, Movement, SiteMaterialMovement
@@ -153,9 +154,11 @@ async def _project(
     status: ProjectStatus,
     contact: Contact | None = None,
 ) -> Project:
-    year = datetime.now(YEREVAN).year
+    # the app's counter, so projects created later don't collide with these
+    reference = await next_reference(session, "P")
+    assert reference.endswith(f"-{ref:04d}")  # noqa: S101 — seeded in order 1..5
     project = Project(
-        reference=f"P-{year}-{ref:04d}",
+        reference=reference,
         name=name,
         site_id=site.id,
         company_id=company.id,

@@ -11,14 +11,16 @@ from app.modules.sites.schemas import SiteIn, SitePatch
 _GEOFENCE_FIELDS = {"latitude", "longitude", "geofence_radius_m", "location_confirmed"}
 
 
-async def create_site(session: AsyncSession, data: SiteIn, user_id: int) -> Site:
+async def create_site(
+    session: AsyncSession, data: SiteIn, user_id: int, *, commit: bool = True
+) -> Site:
     if data.company_id is not None:
         await get_or_404(session, Company, data.company_id, "company")
     site = Site(**data.model_dump())
     session.add(site)
     await session.flush()
     audit.record(session, "site.created", user_id=user_id, entity_type="site", entity_id=site.id)
-    await session.commit()
+    await (session.commit() if commit else session.flush())
     return site
 
 

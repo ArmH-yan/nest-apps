@@ -37,7 +37,9 @@ async def _check_refs(
         raise not_found("service")
 
 
-async def create_project(session: AsyncSession, data: ProjectIn, user_id: int) -> Project:
+async def create_project(
+    session: AsyncSession, data: ProjectIn, user_id: int, *, commit: bool = True
+) -> Project:
     await _check_refs(
         session,
         site_id=data.site_id,
@@ -57,7 +59,7 @@ async def create_project(session: AsyncSession, data: ProjectIn, user_id: int) -
         entity_id=project.id,
         metadata={"reference": project.reference},
     )
-    await session.commit()
+    await (session.commit() if commit else session.flush())
     return project
 
 

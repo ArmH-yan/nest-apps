@@ -6,10 +6,11 @@ from app.modules.companies.models import Company, Contact
 from app.modules.companies.schemas import CompanyIn, CompanyPatch, ContactIn, ContactPatch
 
 
-async def create_company(session: AsyncSession, data: CompanyIn) -> Company:
+async def create_company(session: AsyncSession, data: CompanyIn, *, commit: bool = True) -> Company:
+    """`commit=False`: part of a bigger transaction (request conversion, §9)."""
     company = Company(**data.model_dump())
     session.add(company)
-    await session.commit()
+    await (session.commit() if commit else session.flush())
     return company
 
 
@@ -29,12 +30,12 @@ async def update_company(session: AsyncSession, company_id: int, patch: CompanyP
     return company
 
 
-async def create_contact(session: AsyncSession, data: ContactIn) -> Contact:
+async def create_contact(session: AsyncSession, data: ContactIn, *, commit: bool = True) -> Contact:
     if data.company_id is not None:
         await get_or_404(session, Company, data.company_id, "company")
     contact = Contact(**data.model_dump())
     session.add(contact)
-    await session.commit()
+    await (session.commit() if commit else session.flush())
     return contact
 
 

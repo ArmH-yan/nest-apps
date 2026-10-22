@@ -11,6 +11,8 @@ from app.core.errors import AppError
 from app.core.transitions import SYSTEM, Actor, TransitionTable
 from app.modules.projects.models import ProjectStatus as P
 from app.modules.projects.transitions import PROJECT_TRANSITIONS
+from app.modules.requests.models import RequestStatus as R
+from app.modules.requests.transitions import REQUEST_TRANSITIONS
 from app.modules.scheduling.models import AssignmentStatus as A
 from app.modules.scheduling.models import JobStatus as J
 from app.modules.scheduling.models import VisitStatus as V
@@ -96,6 +98,25 @@ EXPECTED: dict[
                 ]
                 for r in (M, ADMIN)
             ),
+        },
+    ),
+    "assessment request": (
+        REQUEST_TRANSITIONS,
+        R,
+        {
+            (s, t, r)
+            for s, t in [
+                (R.NEW, R.IN_REVIEW),
+                (R.NEW, R.CONVERTED),
+                (R.IN_REVIEW, R.CONVERTED),
+                (R.NEW, R.REJECTED),
+                (R.IN_REVIEW, R.REJECTED),
+                (R.NEW, R.SPAM),
+                (R.IN_REVIEW, R.SPAM),
+                (R.REJECTED, R.IN_REVIEW),
+                (R.SPAM, R.IN_REVIEW),
+            ]
+            for r in (M, ADMIN)
         },
     ),
 }

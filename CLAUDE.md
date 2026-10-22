@@ -46,15 +46,15 @@ infrastructure/       Caddy, prod compose, backups
 docs/
 ```
 
-Phase 1 (§41) is built. Phase 3 (manager web, timesheets, planning timeline, time off, push backend) is built; push verified on the emulator with a dev Firebase project (§26 "Setup"). Phase 2: scheduling core, the `/worker/*` API and the app's `HttpNestApi` are built and verified on the emulator against the real API; only the field test with real workers is pending (§41 status). The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
+Phase 1 (§41) is built. Phase 3 (manager web, timesheets, planning timeline, time off, push backend) is built; push verified on the emulator with a dev Firebase project (§26 "Setup"). Phase 4 (intake: website leads, requests, conversion, nest_web connected) is built; going live needs deployment (§12). Phase 2: scheduling core, the `/worker/*` API and the app's `HttpNestApi` are built and verified on the emulator against the real API; only the field test with real workers is pending (§41 status). The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
 
 ## Related repo: public website
 
 - `F:\nest_web` (GitHub `ArmH-yan/nest_web`) is a Next.js 15 marketing site in its own repo. **Don't edit it unless asked.**
 - Its contact form goes `src/components/contact-form.tsx` → `src/app/api/contact/route.ts` → `src/lib/contact.ts` (`submitContact`, using env vars `CONTACT_API_URL` / `CONTACT_API_KEY`).
-- It will POST to `POST /api/v1/public/assessment-requests` with a service key (ARCHITECTURE §12). The backend must accept its payload field names unchanged: `name, company, phone, email, service, projectType, message`.
+- It POSTs to `POST /api/v1/public/assessment-requests` with `X-Service-Key: CONTACT_API_KEY` (= the API's `INTAKE_SERVICE_KEY`) and the visitor's `locale` (ARCHITECTURE §12). The backend must accept its payload field names unchanged: `name, company, phone, email, service, projectType, message`.
+- Its form sends `service` as the translated display name, not the slug. The backend maps those names (`WEBSITE_SERVICE_NAMES` in `apps/api/app/modules/requests/service.py`); update the map when the site's service names change.
 - Service slugs must match `nest_web/src/config/services.ts` (`safety-system`, `dust-protection`).
-- Its README/AGENTS.md still mention a Planfix webhook. That is outdated.
 
 ## Backend conventions (apps/api)
 

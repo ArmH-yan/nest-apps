@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     telegram_bot_username: str | None = None
     # Push (§26): "log" in development (no Firebase project needed), "fcm" in production
     # with the Firebase service-account JSON (a secret file, never committed).
+    # The website's key for POST /public/assessment-requests (§12, `X-Service-Key`).
+    # Unset: the public intake endpoint refuses every request.
+    intake_service_key: SecretStr | None = None
     push_provider: Literal["log", "fcm"] = "log"
     fcm_credentials_file: str | None = None
 

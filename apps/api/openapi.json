@@ -940,6 +940,82 @@
         "title": "ContactPatch",
         "type": "object"
       },
+      "ConvertIn": {
+        "description": "One step from a lead to a project (§9). Each part is either an existing\nrecord (`*_id`) or a new one; a private customer has no company.",
+        "properties": {
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "contact_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Id"
+          },
+          "new_company": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompanyIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "new_contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NewContactIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "new_site": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NewSiteIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "project": {
+            "$ref": "#/components/schemas/NewProjectIn"
+          },
+          "site_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Id"
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "title": "ConvertIn",
+        "type": "object"
+      },
       "CrewIn": {
         "description": "The complete crew for the visit. Workers not listed are removed (cancelled).",
         "properties": {
@@ -1960,6 +2036,126 @@
         "title": "LoginResponse",
         "type": "object"
       },
+      "ManualRequestIn": {
+        "description": "A lead taken by phone or in person, entered by a manager.",
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hy",
+                  "ru",
+                  "en"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          },
+          "message": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "project_type": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Type"
+          },
+          "service_slug": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Slug"
+          },
+          "site_address": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Address"
+          },
+          "source": {
+            "default": "phone",
+            "enum": [
+              "phone",
+              "manual"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "message"
+        ],
+        "title": "ManualRequestIn",
+        "type": "object"
+      },
       "MaterialMovementIn": {
         "properties": {
           "catalog_item_id": {
@@ -2209,6 +2405,187 @@
         ],
         "title": "Movement",
         "type": "string"
+      },
+      "NewContactIn": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "full_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          }
+        },
+        "required": [
+          "full_name"
+        ],
+        "title": "NewContactIn",
+        "type": "object"
+      },
+      "NewProjectIn": {
+        "properties": {
+          "expected_install_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Install Date"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "service_slug": {
+            "maxLength": 64,
+            "title": "Service Slug",
+            "type": "string"
+          },
+          "status": {
+            "default": "LEAD",
+            "enum": [
+              "LEAD",
+              "SURVEY"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "service_slug"
+        ],
+        "title": "NewProjectIn",
+        "type": "object"
+      },
+      "NewSiteIn": {
+        "properties": {
+          "access_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Notes"
+          },
+          "address": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Address",
+            "type": "string"
+          },
+          "geofence_radius_m": {
+            "anyOf": [
+              {
+                "maximum": 5000.0,
+                "minimum": 10.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geofence Radius M"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,10}0*$)\\d{0,3}\\.\\d{0,6}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,10}0*$)\\d{0,3}\\.\\d{0,6}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "address",
+          "latitude",
+          "longitude"
+        ],
+        "title": "NewSiteIn",
+        "type": "object"
       },
       "NotificationOut": {
         "properties": {
@@ -2973,6 +3350,88 @@
         "title": "ProjectStatus",
         "type": "string"
       },
+      "PublicRequestIn": {
+        "description": "`POST /public/assessment-requests` from nest_web (§12). The field names are\nthe website's own and must stay as they are. Unknown fields are ignored.",
+        "properties": {
+          "company": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Company",
+            "type": "string"
+          },
+          "email": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Email",
+            "type": "string"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hy",
+                  "ru",
+                  "en"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          },
+          "message": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Phone",
+            "type": "string"
+          },
+          "projectType": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Projecttype",
+            "type": "string"
+          },
+          "service": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Service",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "message"
+        ],
+        "title": "PublicRequestIn",
+        "type": "object"
+      },
+      "PublicRequestOut": {
+        "properties": {
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reference"
+        ],
+        "title": "PublicRequestOut",
+        "type": "object"
+      },
       "RefreshRequest": {
         "properties": {
           "refresh_token": {
@@ -2987,6 +3446,397 @@
         ],
         "title": "RefreshRequest",
         "type": "object"
+      },
+      "RejectIn": {
+        "properties": {
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "spam": {
+            "default": false,
+            "title": "Spam",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "RejectIn",
+        "type": "object"
+      },
+      "RequestCountsOut": {
+        "description": "For the dashboard card and the sidebar badge (manager alerts, §41 Phase 4).",
+        "properties": {
+          "in_review": {
+            "title": "In Review",
+            "type": "integer"
+          },
+          "new": {
+            "title": "New",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "new",
+          "in_review"
+        ],
+        "title": "RequestCountsOut",
+        "type": "object"
+      },
+      "RequestOut": {
+        "properties": {
+          "contact_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "preferred_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Date"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "project_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Type"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "service_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Slug"
+          },
+          "site_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Address"
+          },
+          "source": {
+            "$ref": "#/components/schemas/RequestSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RequestStatus"
+          },
+          "submitted_company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted Company"
+          },
+          "submitted_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted Email"
+          },
+          "submitted_name": {
+            "title": "Submitted Name",
+            "type": "string"
+          },
+          "submitted_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted Phone"
+          },
+          "submitted_service": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted Service"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "status",
+          "source",
+          "locale",
+          "submitted_name",
+          "submitted_company",
+          "submitted_phone",
+          "submitted_email",
+          "submitted_service",
+          "service_slug",
+          "project_type",
+          "message",
+          "site_address",
+          "latitude",
+          "longitude",
+          "preferred_date",
+          "review_note",
+          "contact_id",
+          "project_id",
+          "reviewed_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RequestOut",
+        "type": "object"
+      },
+      "RequestPatch": {
+        "description": "Start a review, or add what the call with the customer revealed.",
+        "properties": {
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,10}0*$)\\d{0,3}\\.\\d{0,6}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,10}0*$)\\d{0,3}\\.\\d{0,6}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "preferred_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Date"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "service_slug": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Slug"
+          },
+          "site_address": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Address"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "const": "IN_REVIEW",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "RequestPatch",
+        "type": "object"
+      },
+      "RequestSource": {
+        "enum": [
+          "website",
+          "phone",
+          "manual"
+        ],
+        "title": "RequestSource",
+        "type": "string"
+      },
+      "RequestStatus": {
+        "enum": [
+          "NEW",
+          "IN_REVIEW",
+          "CONVERTED",
+          "REJECTED",
+          "SPAM"
+        ],
+        "title": "RequestStatus",
+        "type": "string"
       },
       "ResetPasswordIn": {
         "properties": {
@@ -4814,6 +5664,394 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/assessment-requests": {
+      "get": {
+        "operationId": "list_requests_api_v1_assessment_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/components/schemas/RequestStatus"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RequestOut"
+                  },
+                  "title": "Response List Requests Api V1 Assessment Requests Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Requests",
+        "tags": [
+          "requests"
+        ]
+      },
+      "post": {
+        "description": "A lead taken by phone or in person.",
+        "operationId": "create_request_api_v1_assessment_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/v1/assessment-requests/counts": {
+      "get": {
+        "operationId": "request_counts_api_v1_assessment_requests_counts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestCountsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Request Counts",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/v1/assessment-requests/{request_id}": {
+      "get": {
+        "operationId": "get_request_api_v1_assessment_requests__request_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Request",
+        "tags": [
+          "requests"
+        ]
+      },
+      "patch": {
+        "operationId": "update_request_api_v1_assessment_requests__request_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/v1/assessment-requests/{request_id}/convert": {
+      "post": {
+        "description": "Creates or links company, contact, site and project in one transaction (§9).",
+        "operationId": "convert_api_v1_assessment_requests__request_id__convert_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Convert",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/v1/assessment-requests/{request_id}/reject": {
+      "post": {
+        "operationId": "reject_api_v1_assessment_requests__request_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reject",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
     "/api/v1/auth/change-password": {
       "post": {
         "operationId": "change_password_api_v1_auth_change_password_post",
@@ -6677,6 +7915,66 @@
         "summary": "Update Project",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/public/assessment-requests": {
+      "post": {
+        "description": "nest_web's contact form (§12), server to server with `X-Service-Key`.",
+        "operationId": "submit_api_v1_public_assessment_requests_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-service-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit",
+        "tags": [
+          "requests"
         ]
       }
     },

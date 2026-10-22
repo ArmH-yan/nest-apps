@@ -51,3 +51,12 @@ async def test_seed_demo_gives_arman_a_working_day(
     assert flags["Ajapnyak Heights"] == (True, False)
     assert flags["Arabkir Business Center"] == (False, True)
     assert len(plan) == 5
+    # the seed's projects use the app's reference counter: a new one doesn't collide
+    sites = (await client.get("/api/v1/sites", headers=manager)).json()
+    created = await client.post(
+        "/api/v1/projects",
+        headers=manager,
+        json={"name": "New lead", "site_id": sites[0]["id"], "service_slug": "safety-system"},
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["reference"].endswith("-0006")

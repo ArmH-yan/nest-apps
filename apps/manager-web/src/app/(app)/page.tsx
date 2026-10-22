@@ -1,6 +1,6 @@
 "use client";
 
-// Dashboard (ARCHITECTURE §13), first slice: today's crews and jobs without a crew.
+// Dashboard (ARCHITECTURE §13): new requests, today's crews and jobs without a crew.
 // Live per-worker state and flagged timesheets come with the timesheet module.
 
 import Link from "next/link";
@@ -22,6 +22,7 @@ export default function Dashboard() {
   const to = encodeURIComponent(yerevanInstant(today, "23:59"));
   const schedule = useApi<Entry[]>(`/api/v1/schedule?from=${from}&to=${to}`);
   const drafts = useApi<JobItem[]>("/api/v1/jobs?status=DRAFT&limit=50");
+  const leads = useApi<Schemas["RequestOut"][]>("/api/v1/assessment-requests?status=NEW&limit=5");
 
   const visits = new Map<number, Entry[]>();
   for (const e of schedule.data ?? []) {
@@ -31,6 +32,33 @@ export default function Dashboard() {
   return (
     <div className="stack">
       <PageHeader title={`${t("dashboard.title")} · ${formatDate(new Date().toISOString())}`} />
+
+      {(leads.data?.length ?? 0) > 0 && (
+        <section className="card stack">
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <h2>{t("dashboard.newRequests")}</h2>
+            <Link href="/requests" className="btn link">
+              → {t("req.title")}
+            </Link>
+          </div>
+          <table className="list">
+            <tbody>
+              {(leads.data ?? []).map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    {formatDate(r.created_at)} {formatTime(r.created_at)}
+                  </td>
+                  <td>
+                    <Link href={`/requests/${r.id}`}>{r.submitted_name}</Link>
+                    {r.submitted_company && <div className="muted small">{r.submitted_company}</div>}
+                  </td>
+                  <td>{r.submitted_phone ?? r.submitted_email}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       <section className="card stack">
         <h2>{t("dashboard.todayVisits")}</h2>

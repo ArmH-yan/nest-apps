@@ -4,6 +4,99 @@
  */
 
 export interface paths {
+    "/api/v1/assessment-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Requests */
+        get: operations["list_requests_api_v1_assessment_requests_get"];
+        put?: never;
+        /**
+         * Create Request
+         * @description A lead taken by phone or in person.
+         */
+        post: operations["create_request_api_v1_assessment_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assessment-requests/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Request Counts */
+        get: operations["request_counts_api_v1_assessment_requests_counts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assessment-requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Request */
+        get: operations["get_request_api_v1_assessment_requests__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Request */
+        patch: operations["update_request_api_v1_assessment_requests__request_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/assessment-requests/{request_id}/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Convert
+         * @description Creates or links company, contact, site and project in one transaction (§9).
+         */
+        post: operations["convert_api_v1_assessment_requests__request_id__convert_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assessment-requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject */
+        post: operations["reject_api_v1_assessment_requests__request_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/change-password": {
         parameters: {
             query?: never;
@@ -467,6 +560,26 @@ export interface paths {
         patch: operations["update_project_api_v1_projects__project_id__patch"];
         trace?: never;
     };
+    "/api/v1/public/assessment-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit
+         * @description nest_web's contact form (§12), server to server with `X-Service-Key`.
+         */
+        post: operations["submit_api_v1_public_assessment_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/schedule": {
         parameters: {
             query?: never;
@@ -692,6 +805,30 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/worker/devices/{fcm_token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Register Device
+         * @description Idempotent: the app calls it at every start and when FCM rotates the token.
+         */
+        put: operations["register_device_api_v1_worker_devices__fcm_token__put"];
+        post?: never;
+        /**
+         * Unregister Device
+         * @description Called by the app before logout, so the next person on the phone gets no pushes.
+         */
+        delete: operations["unregister_device_api_v1_worker_devices__fcm_token__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1335,6 +1472,23 @@ export interface components {
             preferred_locale?: components["schemas"]["UserLocale"] | null;
         };
         /**
+         * ConvertIn
+         * @description One step from a lead to a project (§9). Each part is either an existing
+         *     record (`*_id`) or a new one; a private customer has no company.
+         */
+        ConvertIn: {
+            /** Company Id */
+            company_id?: number | null;
+            /** Contact Id */
+            contact_id?: number | null;
+            new_company?: components["schemas"]["CompanyIn"] | null;
+            new_contact?: components["schemas"]["NewContactIn"] | null;
+            new_site?: components["schemas"]["NewSiteIn"] | null;
+            project: components["schemas"]["NewProjectIn"];
+            /** Site Id */
+            site_id?: number | null;
+        };
+        /**
          * CrewIn
          * @description The complete crew for the visit. Workers not listed are removed (cancelled).
          */
@@ -1376,6 +1530,15 @@ export interface components {
             worker_id: number;
             /** Worker Name */
             worker_name: string;
+        };
+        /**
+         * DeviceIn
+         * @description `PUT /worker/devices/{fcm_token}` (§26): this phone's push registration.
+         */
+        DeviceIn: {
+            /** App Version */
+            app_version?: string | null;
+            platform: components["schemas"]["Platform"];
         };
         /** EarningsOut */
         EarningsOut: {
@@ -1675,6 +1838,36 @@ export interface components {
             token_type: "bearer";
             user: components["schemas"]["MeResponse"];
         };
+        /**
+         * ManualRequestIn
+         * @description A lead taken by phone or in person, entered by a manager.
+         */
+        ManualRequestIn: {
+            /** Company */
+            company?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Locale */
+            locale?: ("hy" | "ru" | "en") | null;
+            /** Message */
+            message: string;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone?: string | null;
+            /** Project Type */
+            project_type?: string | null;
+            /** Service Slug */
+            service_slug?: string | null;
+            /** Site Address */
+            site_address?: string | null;
+            /**
+             * Source
+             * @default phone
+             * @enum {string}
+             */
+            source: "phone" | "manual";
+        };
         /** MaterialMovementIn */
         MaterialMovementIn: {
             /** Catalog Item Id */
@@ -1754,6 +1947,49 @@ export interface components {
          * @enum {string}
          */
         Movement: "INSTALLED" | "RETRIEVED" | "DAMAGED" | "LOST" | "ADJUSTMENT";
+        /** NewContactIn */
+        NewContactIn: {
+            /** Email */
+            email?: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Phone */
+            phone?: string | null;
+            /** Position */
+            position?: string | null;
+        };
+        /** NewProjectIn */
+        NewProjectIn: {
+            /** Expected Install Date */
+            expected_install_date?: string | null;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string | null;
+            /** Service Slug */
+            service_slug: string;
+            /**
+             * Status
+             * @default LEAD
+             * @enum {string}
+             */
+            status: "LEAD" | "SURVEY";
+        };
+        /** NewSiteIn */
+        NewSiteIn: {
+            /** Access Notes */
+            access_notes?: string | null;
+            /** Address */
+            address: string;
+            /** Geofence Radius M */
+            geofence_radius_m?: number | null;
+            /** Latitude */
+            latitude: number | string;
+            /** Longitude */
+            longitude: number | string;
+            /** Name */
+            name: string;
+        };
         /** NotificationOut */
         NotificationOut: {
             /** Body */
@@ -1866,6 +2102,11 @@ export interface components {
             starts_at: string;
             status: components["schemas"]["VisitStatus"];
         };
+        /**
+         * Platform
+         * @enum {string}
+         */
+        Platform: "android" | "ios";
         /** PresignIn */
         PresignIn: {
             /**
@@ -1975,11 +2216,157 @@ export interface components {
          * @enum {string}
          */
         ProjectStatus: "LEAD" | "SURVEY" | "QUOTED" | "WON" | "LOST" | "INSTALLED" | "DISMANTLED" | "CLOSED";
+        /**
+         * PublicRequestIn
+         * @description `POST /public/assessment-requests` from nest_web (§12). The field names are
+         *     the website's own and must stay as they are. Unknown fields are ignored.
+         */
+        PublicRequestIn: {
+            /**
+             * Company
+             * @default
+             */
+            company: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Locale */
+            locale?: ("hy" | "ru" | "en") | null;
+            /** Message */
+            message: string;
+            /** Name */
+            name: string;
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
+            /**
+             * Projecttype
+             * @default
+             */
+            projectType: string;
+            /**
+             * Service
+             * @default
+             */
+            service: string;
+        };
+        /** PublicRequestOut */
+        PublicRequestOut: {
+            /** Reference */
+            reference: string;
+        };
         /** RefreshRequest */
         RefreshRequest: {
             /** Refresh Token */
             refresh_token: string;
         };
+        /** RejectIn */
+        RejectIn: {
+            /** Reason */
+            reason: string;
+            /**
+             * Spam
+             * @default false
+             */
+            spam: boolean;
+        };
+        /**
+         * RequestCountsOut
+         * @description For the dashboard card and the sidebar badge (manager alerts, §41 Phase 4).
+         */
+        RequestCountsOut: {
+            /** In Review */
+            in_review: number;
+            /** New */
+            new: number;
+        };
+        /** RequestOut */
+        RequestOut: {
+            /** Contact Id */
+            contact_id: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /** Latitude */
+            latitude: string | null;
+            /** Locale */
+            locale: string | null;
+            /** Longitude */
+            longitude: string | null;
+            /** Message */
+            message: string;
+            /** Preferred Date */
+            preferred_date: string | null;
+            /** Project Id */
+            project_id: number | null;
+            /** Project Type */
+            project_type: string | null;
+            /** Reference */
+            reference: string;
+            /** Review Note */
+            review_note: string | null;
+            /** Reviewed By */
+            reviewed_by: number | null;
+            /** Service Slug */
+            service_slug: string | null;
+            /** Site Address */
+            site_address: string | null;
+            source: components["schemas"]["RequestSource"];
+            status: components["schemas"]["RequestStatus"];
+            /** Submitted Company */
+            submitted_company: string | null;
+            /** Submitted Email */
+            submitted_email: string | null;
+            /** Submitted Name */
+            submitted_name: string;
+            /** Submitted Phone */
+            submitted_phone: string | null;
+            /** Submitted Service */
+            submitted_service: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * RequestPatch
+         * @description Start a review, or add what the call with the customer revealed.
+         */
+        RequestPatch: {
+            /** Latitude */
+            latitude?: number | string | null;
+            /** Longitude */
+            longitude?: number | string | null;
+            /** Preferred Date */
+            preferred_date?: string | null;
+            /** Review Note */
+            review_note?: string | null;
+            /** Service Slug */
+            service_slug?: string | null;
+            /** Site Address */
+            site_address?: string | null;
+            /** Status */
+            status?: "IN_REVIEW" | null;
+        };
+        /**
+         * RequestSource
+         * @enum {string}
+         */
+        RequestSource: "website" | "phone" | "manual";
+        /**
+         * RequestStatus
+         * @enum {string}
+         */
+        RequestStatus: "NEW" | "IN_REVIEW" | "CONVERTED" | "REJECTED" | "SPAM";
         /** ResetPasswordIn */
         ResetPasswordIn: {
             /** New Password */
@@ -2625,6 +3012,229 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_requests_api_v1_assessment_requests_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["RequestStatus"][] | null;
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_request_api_v1_assessment_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_counts_api_v1_assessment_requests_counts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestCountsOut"];
+                };
+            };
+        };
+    };
+    get_request_api_v1_assessment_requests__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_request_api_v1_assessment_requests__request_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    convert_api_v1_assessment_requests__request_id__convert_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConvertIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_api_v1_assessment_requests__request_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     change_password_api_v1_auth_change_password_post: {
         parameters: {
             query?: never;
@@ -3667,6 +4277,41 @@ export interface operations {
             };
         };
     };
+    submit_api_v1_public_assessment_requests_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-service-key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     schedule_api_v1_schedule_get: {
         parameters: {
             query: {
@@ -4162,6 +4807,72 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["WorkerConfigOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_device_api_v1_worker_devices__fcm_token__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-device-time"?: string | null;
+            };
+            path: {
+                fcm_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unregister_device_api_v1_worker_devices__fcm_token__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-device-time"?: string | null;
+            };
+            path: {
+                fcm_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

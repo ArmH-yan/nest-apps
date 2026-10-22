@@ -5,12 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { Loading } from "@/components/ui";
+import type { Schemas } from "@/lib/api/client";
 import { isLocale, LOCALE_NAMES, LOCALES, useI18n } from "@/lib/i18n";
 import type { MessageKey } from "@/lib/i18n/en";
 import { useSession } from "@/lib/session";
+import { useApi } from "@/lib/use-api";
 
 const NAV: { href: string; label: MessageKey }[] = [
   { href: "/", label: "nav.dashboard" },
+  { href: "/requests", label: "nav.requests" },
   { href: "/planning", label: "nav.planning" },
   { href: "/jobs", label: "nav.jobs" },
   { href: "/timesheets", label: "nav.timesheets" },
@@ -55,6 +58,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={`nav-link${active(item.href) ? " active" : ""}`}
             >
               {t(item.label)}
+              {item.href === "/requests" && <NewRequestsBadge />}
             </Link>
           ))}
         </nav>
@@ -79,4 +83,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="main">{children}</main>
     </div>
   );
+}
+
+/** Manager alert for new website/phone leads (ARCHITECTURE §41 Phase 4): the
+ * count of NEW requests, refreshed every minute. */
+function NewRequestsBadge() {
+  const counts = useApi<Schemas["RequestCountsOut"]>("/api/v1/assessment-requests/counts");
+  const { reload } = counts;
+  useEffect(() => {
+    const timer = window.setInterval(reload, 60_000);
+    return () => window.clearInterval(timer);
+  }, [reload]);
+  const n = counts.data?.new ?? 0;
+  return n > 0 ? <span className="nav-badge">{n}</span> : null;
 }

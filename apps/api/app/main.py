@@ -20,6 +20,7 @@ from app.modules.health.router import router as health_router
 from app.modules.insights.router import router as insights_router
 from app.modules.planning.router import router as planning_router
 from app.modules.projects.router import router as projects_router
+from app.modules.requests.router import router as requests_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.settings.router import router as settings_router
 from app.modules.sites.router import router as sites_router
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
     api_v1.include_router(planning_router)
     api_v1.include_router(sites_router)
     api_v1.include_router(projects_router)
+    api_v1.include_router(requests_router)
     api_v1.include_router(scheduling_router)
     api_v1.include_router(settings_router)
     api_v1.include_router(timesheets_router)

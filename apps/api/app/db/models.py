@@ -13,6 +13,7 @@ from app.modules.materials import models as materials_models  # noqa: F401
 from app.modules.notifications import models as notifications_models  # noqa: F401
 from app.modules.projects import models as projects_models  # noqa: F401
 from app.modules.push import models as push_models  # noqa: F401
+from app.modules.requests import models as requests_models  # noqa: F401
 from app.modules.scheduling import models as scheduling_models  # noqa: F401
 from app.modules.settings import models as settings_models  # noqa: F401
 from app.modules.sites import models as sites_models  # noqa: F401
