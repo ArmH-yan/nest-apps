@@ -56,6 +56,14 @@ abstract interface class NestApi {
 
   Future<void> putCompletion(TaskCompletion completion);
 
+  /// Registers this phone for push (`PUT /worker/devices/{token}`, §26).
+  /// Idempotent; called at every sign-in and when FCM rotates the token.
+  Future<void> registerDevice({
+    required String token,
+    required String platform,
+    String? appVersion,
+  });
+
   /// Approved tasks and their pay for one Yerevan calendar month.
   Future<EarningsSummary> earnings({required int year, required int month});
 

@@ -4,6 +4,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Firebase is only the push transport (ARCHITECTURE §26): no Analytics or other
+// Firebase SDKs here; firebase_messaging brings what it needs. google-services.json
+// (both flavors' apps, never committed) is optional, so builds without it still work
+// and push stays off.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "am.nest.nest_worker"
     compileSdk = flutter.compileSdkVersion

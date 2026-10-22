@@ -42,6 +42,30 @@ _TEMPLATES: dict[T, dict[str, tuple[str, str]]] = {
 }
 
 
+# `{when}` of a TASK_REMINDER (§26): the evening before, and 1 hour before the start.
+REMINDER_WHEN: dict[str, dict[str, str]] = {
+    "tomorrow": {
+        "hy": "վաղը {time}, {site}",
+        "ru": "завтра в {time}, {site}",
+        "en": "tomorrow at {time}, {site}",
+        "hi": "कल {time} बजे, {site}",
+        "id": "besok pukul {time}, {site}",
+    },
+    "soon": {
+        "hy": "1 ժամից, {time}, {site}",
+        "ru": "через 1 час, в {time}, {site}",
+        "en": "in 1 hour, at {time}, {site}",
+        "hi": "1 घंटे में, {time} बजे, {site}",
+        "id": "1 jam lagi, pukul {time}, {site}",
+    },
+}
+
+
+def reminder_when(kind: str, locale: str, **params: str) -> str:
+    by_locale = REMINDER_WHEN[kind]
+    return by_locale.get(locale, by_locale["en"]).format(**params)
+
+
 def render(type_: T, locale: str, **params: str) -> tuple[str, str]:
     by_locale = _TEMPLATES[type_]
     title, body = by_locale.get(locale, by_locale["en"])

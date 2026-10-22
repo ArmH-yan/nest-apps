@@ -172,6 +172,20 @@ void main() {
     ]);
   });
 
+  test('registers the push token with platform and app version', () async {
+    // FCM tokens contain ':' — it must survive as one path segment
+    server.on('PUT /api/v1/worker/devices/abc%3AAPA91b-token', 204);
+
+    await api.registerDevice(
+      token: 'abc:APA91b-token',
+      platform: 'android',
+      appVersion: '1.0.0',
+    );
+
+    final sent = server.requests.single;
+    expect(sent.body, {'platform': 'android', 'app_version': '1.0.0'});
+  });
+
   test('writes send ints, upper-case enums and UTC timestamps', () async {
     server.on('PUT /api/v1/worker/location-checks/c-1', 200, {});
     server.on('PUT /api/v1/worker/time-entries/t-1', 200, {});

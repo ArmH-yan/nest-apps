@@ -14,6 +14,7 @@ from app.core.time import YEREVAN
 from app.db.crud import not_found
 from app.modules.audit import service as audit
 from app.modules.auth.models import RefreshToken
+from app.modules.push import service as push
 from app.modules.scheduling.models import AssignmentStatus, VisitAssignment
 from app.modules.users.models import User, UserRole, Worker
 from app.modules.users.service import create_user, normalize_email, normalize_phone
@@ -126,6 +127,7 @@ async def update_worker(
         user.is_active = worker.is_active = changes["is_active"]
         if not user.is_active:
             await _revoke_sessions(session, user.id)
+            await push.forget_devices(session, user.id)
     audit.record(
         session,
         "worker.updated",

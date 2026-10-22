@@ -172,7 +172,7 @@ class ProfileScreen extends ConsumerWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(l10n.appVersion),
-                subtitle: Text('1.0.0 · ${config.flavor.name}'),
+                subtitle: Text('${AppConfig.version} · ${config.flavor.name}'),
               ),
             ],
           ),

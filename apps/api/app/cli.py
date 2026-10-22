@@ -86,6 +86,22 @@ async def _seed(*, reset: bool) -> None:
         await get_engine().dispose()
 
 
+async def _push_worker(*, once: bool) -> None:
+    from app.core.logging import configure_logging
+    from app.modules.push import worker
+    from app.modules.push.sender import get_sender
+
+    configure_logging(get_settings().log_level)
+    try:
+        if once:
+            handled = await worker.run_once(get_sender())
+            print(f"Handled {handled} notification(s).")
+        else:
+            await worker.run_forever()
+    finally:
+        await get_engine().dispose()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -107,6 +123,10 @@ def main() -> None:
     commands.add_parser(
         "export-openapi", help=f"write the API contract to {OPENAPI_PATH.name} (§40)"
     )
+    worker = commands.add_parser(
+        "push-worker", help="deliver push notifications and task reminders (§26, §37)"
+    )
+    worker.add_argument("--once", action="store_true", help="one round, then exit")
 
     args = parser.parse_args()
     if args.command == "create-user":
@@ -119,6 +139,8 @@ def main() -> None:
     elif args.command == "export-openapi":
         OPENAPI_PATH.write_text(openapi_json(), encoding="utf-8")
         print(f"Wrote {OPENAPI_PATH}")
+    elif args.command == "push-worker":
+        asyncio.run(_push_worker(once=args.once))
 
 
 if __name__ == "__main__":

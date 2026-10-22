@@ -72,7 +72,7 @@ For this build phase, implement the full app against **mock repositories**. Stru
 | IDs | `uuid` |
 | Map preview | v1: schematic site/radius preview + "Navigate" (`geo:` intent → Google Maps / Yandex Navigator) via `url_launcher`. `google_maps_flutter` needs an API key and is deferred |
 | Localization | `flutter_localizations` + ARB files (`intl`) |
-| Push (later phase; stub interface now) | `firebase_core` + `firebase_messaging` only — FCM is the push transport (APNs on iOS). No other Firebase packages (no Auth, Firestore, Realtime Database, Storage, Crashlytics, Analytics) |
+| Push (`PushService`, §26) | `firebase_core` + `firebase_messaging` only — FCM is the push transport (APNs on iOS). No other Firebase packages (no Auth, Firestore, Realtime Database, Storage, Crashlytics, Analytics) |
 
 **Why drift instead of SharedPreferences for app data:** the active session, multiple work/break entries, photo queue and outbox must be written atomically and survive the app being killed. SharedPreferences is only for small preferences.
 
@@ -655,7 +655,14 @@ Mock examples:
 - Task submitted successfully
 - Task submission failed — tap to retry
 
-Create a `PushService` interface with a no-op mock for now. FCM (Android; APNs on iOS via FCM) is wired in a later phase. Firebase is only the delivery transport; the notification list and read state come from the NEST API: register the token via `PUT /worker/devices/{token}`, and a push tap opens the task.
+`PushService` (`lib/core/push/push_service.dart`), built 2026-10-20 (ARCHITECTURE §26 "As built"):
+- **`FcmPushService`** is used when the build talks to the real API (`USE_MOCKS=false`). Firebase config is `android/app/google-services.json` (both flavors' apps, git-ignored) via the Google services Gradle plugin, which is applied only when the file exists. Without the file, Firebase init fails quietly and push is off.
+- With mocks and in tests it is **`NoopPushService`**.
+- After sign-in, the app asks for notification permission (Android 13+), then registers the token with `PUT /worker/devices/{token}` (`{platform, app_version}`). It registers again when the token rotates.
+- Tapping a push refreshes the tasks, waits for sign-in to be restored (cold start), then opens `/tasks/{assignment_id}`. A push that arrives while the app is open refreshes the notification list and the tasks.
+- Logout deletes the token on the phone; the server also forgets the user's devices on logout.
+- Firebase is only the delivery transport: the notification list and read state come from the NEST API.
+- Only `firebase_core` and `firebase_messaging` are used. firebase_messaging 17's newer FID API is not used yet.
 
 ---
 

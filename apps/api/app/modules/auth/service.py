@@ -25,6 +25,7 @@ from app.core.security import (
 from app.modules.audit import service as audit
 from app.modules.audit.models import AuditLog
 from app.modules.auth.models import RefreshToken
+from app.modules.push import service as push
 from app.modules.users.models import User, UserRole
 from app.modules.users.service import normalize_email, normalize_phone
 
@@ -237,7 +238,8 @@ async def logout(session: AsyncSession, user: User, client: ClientInfo) -> None:
         .where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))
         .values(revoked_at=func.now())
     )
-    # FCM device tokens are removed here too once `device_tokens` exists (Phase 3).
+    # signed out everywhere → no more pushes to any of the user's phones (§26)
+    await push.forget_devices(session, user.id)
     audit.record(
         session, "auth.logout", user_id=user.id, entity_type="user", entity_id=user.id, ip=client.ip
     )

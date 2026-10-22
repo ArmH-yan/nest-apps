@@ -11,6 +11,7 @@ from pydantic import AwareDatetime, BaseModel, Field, model_validator
 from app.modules.files.models import FileKind
 from app.modules.materials.models import Movement
 from app.modules.notifications.models import NotificationType
+from app.modules.push.models import Platform
 from app.modules.scheduling.models import AssignmentRole, AssignmentStatus, JobType
 from app.modules.timetracking.models import CheckPurpose, EntryKind
 
@@ -219,3 +220,10 @@ class CompletionOut(BaseModel):
     work_seconds: int
     break_seconds: int
     review_flags: list[str]
+
+
+class DeviceIn(BaseModel):
+    """`PUT /worker/devices/{fcm_token}` (§26): this phone's push registration."""
+
+    platform: Platform
+    app_version: str | None = Field(default=None, max_length=32)

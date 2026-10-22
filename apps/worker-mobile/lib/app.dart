@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'core/providers.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/auth_controller.dart';
+import 'features/notifications/presentation/notifications_screen.dart';
 import 'features/profile/presentation/profile_screen.dart';
 
 class NestWorkerApp extends ConsumerWidget {
@@ -55,10 +58,43 @@ class _SyncLifecycle extends ConsumerStatefulWidget {
 
 class _SyncLifecycleState extends ConsumerState<_SyncLifecycle> {
   late final AppLifecycleListener _lifecycle;
+  final _push = <StreamSubscription<Object?>>[];
 
   @override
   void initState() {
     super.initState();
+    // Push (§26): a tapped notification opens its task; one that arrives while
+    // the app is open refreshes the bell and the task list.
+    final push = ref.read(pushServiceProvider);
+    _push
+      ..add(
+        push.openedTaskIds.listen((taskId) async {
+          // a TASK_ASSIGNED push is usually about a task this phone hasn't
+          // downloaded yet: refresh first (offline: open what is cached)
+          try {
+            await ref.read(taskRepositoryProvider).refresh();
+          } on Object {
+            // ignore
+          }
+          // A tap that launched the app arrives while the session is still
+          // being restored; navigating then would be redirected to the splash
+          // screen and lost. Open the task once sign-in is settled.
+          final worker = await ref.read(authControllerProvider.future);
+          if (worker == null) return;
+          ref.read(appRouterProvider).go('/tasks/$taskId');
+        }),
+      )
+      ..add(
+        push.received.listen((_) {
+          ref.invalidate(notificationsProvider);
+          unawaited(
+            ref
+                .read(taskRepositoryProvider)
+                .refresh()
+                .catchError((Object _) {}),
+          );
+        }),
+      );
     _lifecycle = AppLifecycleListener(
       onResume: () {
         if (ref.read(currentWorkerProvider) != null) {
@@ -71,6 +107,9 @@ class _SyncLifecycleState extends ConsumerState<_SyncLifecycle> {
 
   @override
   void dispose() {
+    for (final s in _push) {
+      s.cancel();
+    }
     _lifecycle.dispose();
     super.dispose();
   }

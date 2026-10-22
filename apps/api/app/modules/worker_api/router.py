@@ -6,7 +6,7 @@ import uuid
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Path, Query, Response
 from pydantic import AwareDatetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +16,7 @@ from app.modules.files import service as files
 from app.modules.files.storage import Storage, get_storage
 from app.modules.materials import service as materials
 from app.modules.notifications import service as notifications
+from app.modules.push import service as push
 from app.modules.timetracking import service as timetracking
 from app.modules.worker_api import service
 from app.modules.worker_api.access import own_task
@@ -24,6 +25,7 @@ from app.modules.worker_api.schemas import (
     CatalogItemOut,
     CompletionIn,
     CompletionOut,
+    DeviceIn,
     EarningsOut,
     ExpectedMaterialOut,
     FileOut,
@@ -198,4 +200,23 @@ async def list_notifications(
 @router.post("/notifications/{notification_id}/read", status_code=HTTPStatus.NO_CONTENT)
 async def read_notification(notification_id: int, me: CurrentWorker, session: Session) -> Response:
     await notifications.mark_read(session, me.user.id, notification_id)
+    return Response(status_code=HTTPStatus.NO_CONTENT)
+
+
+FcmToken = Annotated[str, Path(min_length=20, max_length=4096)]
+
+
+@router.put("/devices/{fcm_token}", status_code=HTTPStatus.NO_CONTENT)
+async def register_device(
+    fcm_token: FcmToken, body: DeviceIn, me: CurrentWorker, session: Session
+) -> Response:
+    """Idempotent: the app calls it at every start and when FCM rotates the token."""
+    await push.register_device(session, me.user.id, fcm_token, body.platform, body.app_version)
+    return Response(status_code=HTTPStatus.NO_CONTENT)
+
+
+@router.delete("/devices/{fcm_token}", status_code=HTTPStatus.NO_CONTENT)
+async def unregister_device(fcm_token: FcmToken, me: CurrentWorker, session: Session) -> Response:
+    """Called by the app before logout, so the next person on the phone gets no pushes."""
+    await push.unregister_device(session, me.user.id, fcm_token)
     return Response(status_code=HTTPStatus.NO_CONTENT)

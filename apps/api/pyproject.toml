@@ -12,7 +12,10 @@ dependencies = [
     "asyncpg>=0.30",
     "alembic>=1.14",
     "argon2-cffi>=23.1",
-    "pyjwt>=2.9",
+    # [crypto]: RS256 for the FCM service-account token (ARCHITECTURE §26)
+    "pyjwt[crypto]>=2.9",
+    # FCM HTTP v1 calls from the push worker
+    "httpx>=0.27",
     # S3-compatible file storage (presigned uploads, ARCHITECTURE §24)
     "boto3>=1.35",
 ]
@@ -21,7 +24,6 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
-    "httpx>=0.27",
     "ruff>=0.7",
     "mypy>=1.13",
     # zoneinfo data for `timezone = UTC` in alembic.ini (Windows has no system tz database)

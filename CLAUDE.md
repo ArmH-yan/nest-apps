@@ -46,7 +46,7 @@ infrastructure/       Caddy, prod compose, backups
 docs/
 ```
 
-Phase 1 (§41) is built. Phase 2: scheduling core, the `/worker/*` API and the app's `HttpNestApi` are built and verified on the emulator against the real API; only the field test with real workers is pending (§41 status). The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
+Phase 1 (§41) is built. Phase 3 (manager web, timesheets, planning timeline, time off, push backend) is built; push verified on the emulator with a dev Firebase project (§26 "Setup"). Phase 2: scheduling core, the `/worker/*` API and the app's `HttpNestApi` are built and verified on the emulator against the real API; only the field test with real workers is pending (§41 status). The worker app's Dart package is `nest_worker`, and its Android flavors are `dev` and `prod` (`--flavor` is required). Check what is actually on disk before assuming a file exists. Git is initialized; never commit unless asked.
 
 ## Related repo: public website
 
@@ -68,7 +68,7 @@ Phase 1 (§41) is built. Phase 2: scheduling core, the `/worker/*` API and the a
 - GPS data and device time are **untrusted**. Store them, recompute on the server, and **flag** problems instead of rejecting the data.
 - Errors use the shape `{"error": {"code", "message", "details"}}` with stable codes, because the app maps codes to localized messages.
 - Authorization happens in the query (`WHERE worker_id = :me`). If a worker requests another worker's object, return 404.
-- Background work uses a Postgres-backed queue (procrastinate) and is enqueued in the same transaction as the business change.
+- Background work is queued in PostgreSQL in the same transaction as the business change, and run by a separate worker process from the same codebase. Push: a `notifications` row *is* the job (`push_status`), and `python -m app.cli push-worker` delivers it and adds task reminders (ARCHITECTURE §26, §37; decided 2026-10-20: no procrastinate, because with asyncpg it can't share the transaction).
 - Schema changes are made only through Alembic migrations.
 - Tests run against a real PostgreSQL instance (Docker), not SQLite.
 
@@ -113,6 +113,7 @@ docker compose up -d db storage         # PostgreSQL 17 on :5433 (+ nest_test DB
 .venv/Scripts/python -m app.cli init-storage   # once: creates the S3 bucket
 .venv/Scripts/python -m app.cli export-openapi # after any API change: updates apps/api/openapi.json (contract, §40)
 .venv/Scripts/python -m app.cli seed-demo --reset   # demo data (dev only); everyone's password: nest1234
+.venv/Scripts/python -m app.cli push-worker   # push delivery + task reminders (PUSH_PROVIDER=log only logs); --once for one round
 .venv/Scripts/ruff format . && .venv/Scripts/ruff check . && .venv/Scripts/mypy app tests alembic/env.py
 .venv/Scripts/pytest                    # uses TEST_DATABASE_URL (nest_test), migrates it to head
 .venv/Scripts/python -m app.cli create-user --phone +374... --first-name A --last-name B --role ADMIN   # prompts for the password; WORKER needs --employee-code

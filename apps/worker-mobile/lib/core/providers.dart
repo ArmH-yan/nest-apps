@@ -19,6 +19,7 @@ import 'config/app_config.dart';
 import 'location/location_service.dart';
 import 'media/photo_capture_service.dart';
 import 'network/api_client.dart';
+import 'push/push_service.dart';
 import 'storage/app_database.dart';
 import 'storage/token_storage.dart';
 import 'sync/outbox.dart';
@@ -129,6 +130,15 @@ final earningsRepositoryProvider = Provider<EarningsRepository>(
 final notificationRepositoryProvider = Provider<NotificationRepository>(
   (ref) => NotificationRepository(ref.watch(nestApiProvider)),
 );
+
+/// FCM against the real API; push is off with mocks and in tests. A build
+/// without google-services.json fails Firebase init quietly (no push).
+final pushServiceProvider = Provider<PushService>((ref) {
+  if (ref.watch(appConfigProvider).useMocks) return const NoopPushService();
+  final service = FcmPushService(api: ref.watch(nestApiProvider));
+  ref.onDispose(service.dispose);
+  return service;
+});
 
 final syncServiceProvider = Provider<SyncService>((ref) {
   final service = SyncService(

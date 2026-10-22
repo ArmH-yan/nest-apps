@@ -236,6 +236,16 @@ class HttpNestApi implements NestApi {
   };
 
   @override
+  Future<void> registerDevice({
+    required String token,
+    required String platform,
+    String? appVersion,
+  }) => _client.putJson('$_worker/devices/${Uri.encodeComponent(token)}', {
+    'platform': platform,
+    'app_version': appVersion,
+  });
+
+  @override
   Future<void> markNotificationRead(String id) =>
       _client.postJson('$_worker/notifications/$id/read', null);
 

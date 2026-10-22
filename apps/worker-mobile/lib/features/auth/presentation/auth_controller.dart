@@ -39,6 +39,7 @@ class AuthController extends AsyncNotifier<Worker?> {
 
   Future<void> logout() async {
     ref.read(syncServiceProvider).pause();
+    await ref.read(pushServiceProvider).unregister();
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
   }
@@ -60,6 +61,10 @@ class AuthController extends AsyncNotifier<Worker?> {
       );
     }
     unawaited(ref.read(syncServiceProvider).start());
+    // Push is best effort: no network or no permission must not block sign-in.
+    unawaited(
+      ref.read(pushServiceProvider).register().catchError((Object _) {}),
+    );
     // Refresh in the background; the cached list shows immediately.
     unawaited(
       ref.read(taskRepositoryProvider).refresh().catchError((Object _) {}),

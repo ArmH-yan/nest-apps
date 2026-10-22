@@ -112,6 +112,19 @@ class MockNestApi implements NestApi {
   @override
   Future<void> logout() async {}
 
+  /// Tokens registered for push, newest last (for tests).
+  final registeredDevices = <String>[];
+
+  @override
+  Future<void> registerDevice({
+    required String token,
+    required String platform,
+    String? appVersion,
+  }) async {
+    await _call();
+    registeredDevices.add(token);
+  }
+
   @override
   Future<void> changePassword({
     required String currentPassword,

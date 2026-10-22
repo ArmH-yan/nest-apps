@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     min_supported_app_version: str = "1.0.0"
     # The NEST bot for crew chat (§26a); null until Phase 3b.
     telegram_bot_username: str | None = None
+    # Push (§26): "log" in development (no Firebase project needed), "fcm" in production
+    # with the Firebase service-account JSON (a secret file, never committed).
+    push_provider: Literal["log", "fcm"] = "log"
+    fcm_credentials_file: str | None = None
 
     @field_validator("cors_origins", mode="before")
     @classmethod

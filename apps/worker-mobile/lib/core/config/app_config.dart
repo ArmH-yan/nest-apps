@@ -24,6 +24,9 @@ class AppConfig {
     );
   }
 
+  /// Keep in step with `version:` in pubspec.yaml (sent with the push token).
+  static const version = '1.0.0';
+
   final String apiBaseUrl;
 
   /// When true, Mock* repositories are used instead of Api* ones.

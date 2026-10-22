@@ -89,7 +89,7 @@ Every client app goes through the API. The only other thing allowed to connect t
 | Database | PostgreSQL (with `btree_gist`) | Operational source of truth |
 | ORM / migrations | SQLAlchemy 2.x + Alembic | Database access and schema migrations |
 | Validation | Pydantic | API/request validation |
-| Background tasks | Postgres-backed queue (e.g. `procrastinate`) | Push, reminders, PDF generation |
+| Background tasks | Rows in PostgreSQL + a worker process (`app.cli push-worker`), §37 | Push, reminders, PDF generation |
 | File storage | S3-compatible (Cloudflare R2 / Hetzner Object Storage; RustFS locally) | Photos, quote PDFs |
 | Push notifications | Firebase Cloud Messaging (FCM) for Android; APNs for iOS (delivered via FCM) | Worker app push. **Firebase is used only as the push transport** — no Firebase Auth, Firestore, Realtime Database, Storage, App Distribution or other Firebase services |
 | Manager alerts | In-app list + Telegram bot (optional) | New requests, flagged timesheets |
@@ -374,7 +374,10 @@ fcm_token        unique
 platform         android | ios
 app_version
 last_seen_at
+created_at
 ```
+
+A token belongs to whoever signed in on that phone last (`PUT /worker/devices/{token}` moves it). It is deleted on logout (which signs out everywhere), when the worker is deactivated, and when FCM reports it UNREGISTERED. Migration `0007`.
 
 ### notifications
 
@@ -387,6 +390,12 @@ body
 data             jsonb (e.g. assignment_id)
 read_at
 created_at
+dedupe_key       unique, nullable: generated notifications that must exist once (task reminders)
+push_status      PENDING | SENT | SKIPPED | FAILED   (the row is its own push job, §26)
+push_attempts
+next_push_at     retry backoff
+pushed_at
+push_error
 ```
 
 ### workers
@@ -1411,6 +1420,13 @@ GET    /schedule?from=&to=&worker_id=
 GET    /planning/projects?from=&to=      planning timeline (§14a)
 ```
 
+### Push devices (worker app)
+
+```text
+PUT    /worker/devices/{fcm_token}         {platform, app_version}; idempotent, 204
+DELETE /worker/devices/{fcm_token}         own token only, 204
+```
+
 ### Time off
 
 ```text
@@ -1607,6 +1623,43 @@ To managers:  new website request · task submitted · flagged timesheet · NO_A
 
 Notification text uses the recipient's locale (hy/ru/en/hi/id).
 
+### As built (2026-10-20)
+
+- **The row is the job.** A business change inserts the `notifications` row as `PENDING` in its own transaction. Nothing else is enqueued, so a push can't be lost between commit and enqueue.
+- **The push worker** (`python -m app.cli push-worker`, `app/modules/push`) is a separate process from the same codebase:
+  - every 5 s it claims due rows with `FOR UPDATE SKIP LOCKED` (so several workers are safe) and sends to all of the user's devices
+  - any success → `SENT`
+  - UNREGISTERED tokens are deleted
+  - transient errors (network, 429, 5xx) retry with backoff (60 s, 2 min, 4 min…) and become `FAILED` after 5 attempts
+  - no device → `SKIPPED`
+  - older than 12 h → `SKIPPED`, because a stale buzz is worse than none
+- **Reminders**: once a minute the worker adds `TASK_REMINDER` rows, idempotently by `dedupe_key` = assignment + kind + start time, so a rescheduled visit is reminded again:
+  - `tomorrow`: from 19:00 Yerevan, for tasks starting tomorrow that were assigned before 19:00
+  - `soon`: 1 hour before the start
+  - both only for tasks still `ASSIGNED` on a `PLANNED` visit
+  - the text is localized, e.g. "Reminder · Install Safety Net · tomorrow at 09:00, Building A"
+- **Transport** (`app/modules/push/sender.py`, behind a `PushSender` interface):
+  - `PUSH_PROVIDER=log` (development) only logs
+  - `PUSH_PROVIDER=fcm` uses FCM HTTP v1 with the service-account JSON (`FCM_CREDENTIALS_FILE`, a secret file, never committed)
+  - the OAuth token is an RS256 JWT exchanged at Google's token endpoint (PyJWT + httpx, no Google SDK) and cached for about 1 h
+  - the message carries the title/body plus data `{notification_id, type, assignment_id}`
+- **Worker app**: `FcmPushService` (only `firebase_core` + `firebase_messaging`):
+  - Firebase is configured from `android/app/google-services.json` (one file for both flavors' apps, git-ignored), read by the Google services Gradle plugin. The plugin is applied only when the file exists, so builds without it (CI, a fresh clone) still work, and push just stays off. No Analytics or other Firebase SDKs are added
+  - after sign-in it asks for notification permission, registers the token, and re-registers when the token rotates
+  - tapping a push refreshes the tasks, waits until sign-in is restored (on a cold start), then opens the task; a push arriving while the app is open refreshes the bell and the task list
+  - logout deletes the token on the phone
+  - it uses the registration-token API; firebase_messaging 17 deprecates it in favour of FID "direct send", and switching is a later change on both the server and the app
+- **Managers**: no push in v1 (their notifications are in-app).
+
+### Setup (to do once, by the owner)
+
+1. Create a Firebase project (console.firebase.google.com). Use only Cloud Messaging; don't enable Analytics.
+2. Add two Android apps: `am.nest.worker` (prod) and `am.nest.worker.dev` (dev). Download `google-services.json` after adding the second app, so it lists both, and put it at `apps/worker-mobile/android/app/google-services.json` (git-ignored). Ignore the console's "add firebase-analytics" step.
+3. Project settings → Service accounts → generate a private key. Save the file outside the repo, or as `service-account-fcm.json`, which `.gitignore` keeps out of Git.
+4. Set `PUSH_PROVIDER=fcm` and `FCM_CREDENTIALS_FILE=<path>` for the API host, and run the push worker next to the API (on the production compose, a second service with the same image).
+
+Done for development on 2026-10-21 with Firebase project `nest-test-1adbc`. Verified on the emulator: the token is registered; a TASK_ASSIGNED push arrives in Armenian with the app in the background and after its process was killed; tapping it opens the new task. A production project and keys are still to be made.
+
 ---
 
 # 26a. Crew Chat with Translation (Telegram bot)
@@ -1646,7 +1699,7 @@ Ravi (hi) ──► NEST bot ──► API: store message, detect language, tran
 
 ### Processing
 
-- Webhook: `POST /api/v1/integrations/telegram/webhook`, verified with Telegram's `X-Telegram-Bot-Api-Secret-Token` header (`TELEGRAM_WEBHOOK_SECRET`). The handler stores the update and the message in one transaction, enqueues a procrastinate task and returns `200` immediately. Updates are deduplicated by `update_id`, because Telegram retries.
+- Webhook: `POST /api/v1/integrations/telegram/webhook`, verified with Telegram's `X-Telegram-Bot-Api-Secret-Token` header (`TELEGRAM_WEBHOOK_SECRET`). The handler stores the update and the message in one transaction (the stored row is the job for the background worker, §37) and returns `200` immediately. Updates are deduplicated by `update_id`, because Telegram retries.
 - Task: translate → send to each recipient (respecting Telegram's rate limits; retried on `429` with `retry_after`) → store `telegram_message_links`.
 - The same bot sends the manager alerts from §26. Worker task pushes stay on FCM.
 
@@ -1977,7 +2030,11 @@ Each environment has its own database, secrets, storage bucket and Firebase proj
 
 # 37. Background Tasks
 
-Use a **Postgres-backed task queue** (e.g. `procrastinate`) running as a separate process from the same codebase. This avoids Redis.
+Background work is stored in **PostgreSQL** and run by a **separate worker process** from the same codebase. There is no Redis and no queue library.
+
+The job is a row written in the same transaction as the business change: for push, the `notifications` row itself (§26 "As built"). Workers claim rows with `FOR UPDATE SKIP LOCKED`.
+
+Decided 2026-10-20: procrastinate was planned, but with our asyncpg driver it can't enqueue inside the business transaction (it needs psycopg and its own connection). New kinds of background work follow the same pattern: a table, or a status column, plus a loop in the worker process.
 
 Tasks:
 
@@ -2073,7 +2130,7 @@ Seed script; first real field test with 1–2 workers
 
 ## Phase 3 — Manager web app
 
-Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). **Timesheets done (2026-10-18)**: review, approve, adjust, location override and CSV, both API and web (§13 "Timesheets"). **Info views (2026-10-19)**: worker and company statistics (§13a). **Planning timeline v1 done (2026-10-19)** (§14a). **Worker time off done (2026-10-20)** (§8 `worker_time_off`, §13). Next: FCM push + reminders.
+Status: **first slice done (2026-10-18)**: cookie auth + CSRF, worker management API, manager screens for jobs/visits/crews, projects, sites (map), companies, workers, dashboard (§13 "As built"). **Timesheets done (2026-10-18)**: review, approve, adjust, location override and CSV, both API and web (§13 "Timesheets"). **Info views (2026-10-19)**: worker and company statistics (§13a). **Planning timeline v1 done (2026-10-19)** (§14a). **Worker time off done (2026-10-20)** (§8 `worker_time_off`, §13). **Push + reminders built (2026-10-20)** (§26 "As built"); pushes are only logged until the Firebase project exists (§26 "Setup"). Phase 3 is done apart from that setup.
 
 ```text
 Login, dashboard, jobs/visits, crews, workers + time off

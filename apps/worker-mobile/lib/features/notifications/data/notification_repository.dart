@@ -1,8 +1,8 @@
 import '../../../core/api/nest_api.dart';
 import '../domain/app_notification.dart';
 
-/// In-app notification list (`GET /worker/notifications`). Push delivery
-/// (FCM) is wired later behind PushService; content always comes from the API.
+/// In-app notification list (`GET /worker/notifications`). Push delivery is
+/// `PushService` (core/push); content always comes from the API.
 class NotificationRepository {
   NotificationRepository(this._api);
 
@@ -14,16 +14,4 @@ class NotificationRepository {
   }
 
   Future<void> markRead(String id) => _api.markNotificationRead(id);
-}
-
-/// Push transport (FCM, Android; APNs via FCM on iOS) — later phase.
-abstract interface class PushService {
-  Future<void> register();
-}
-
-class NoopPushService implements PushService {
-  const NoopPushService();
-
-  @override
-  Future<void> register() async {}
 }
